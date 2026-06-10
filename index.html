@@ -1492,7 +1492,7 @@
                     </div>
                     <div class="config-group">
                         <label for="minDistance">Min. Distanz (km):</label>
-                        <input type="number" id="minDistanceKm" value="2" min="0" step="0.1" onchange="applyFilters()" />
+                        <input type="number" id="minDistance" value="2" min="0" step="0.1" onchange="applyFilters()" />
                     </div>
                     <div class="config-group">
                         <label for="maxSpeed">Max. Geschwindigkeit (km/h):</label>
@@ -1500,6 +1500,7 @@
                     </div>
                     <div class="config-group">
                         <button onclick="applyFilters()" class="btn btn-primary">Filter anwenden</button>
+                        <button onclick="resetSettingsToDefault()" style="background:#ef4444;color:#fff;border:none;padding:9px 20px;border-radius:8px;cursor:pointer;font-weight:600;font-size:0.9em;margin-top:10px;display:inline-flex;align-items:center;gap:6px;transition:background 0.2s" onmouseover="this.style.background='#dc2626'" onmouseout="this.style.background='#ef4444'">&#x21BA; Einstellungen zurücksetzen</button>
                     </div>
                 </div>
                 <div id="importedDataInfo" style="display: none; margin-top: 16px; padding: 12px; background: #0e3b4a; border-radius: 8px; border: 1px solid #1e4a5f;">
@@ -1536,8 +1537,7 @@
             </div>
 
 			<!-- 5. Dashboard Grid - Statistische Übersicht -->
-			<button onclick="resetSettingsToDefault()" style="background:#ef4444;color:#fff;border:none;padding:10px 22px;border-radius:8px;cursor:pointer;font-weight:600;font-size:0.95em;margin-top:12px;transition:all 0.2s ease" onmouseover="this.style.background='#dc2626'" onmouseout="this.style.background='#ef4444'">&#x21BA; Einstellungen zurücksetzen</button>
-<div class="collapsible-section" id="dashboardSection" style="display: none;">
+			<div class="collapsible-section" id="dashboardSection" style="display: none;">
 				<div class="collapsible-header" onclick="toggleSection('dashboardGrid')">
 					<div class="collapsible-title">
 						📊 Auswertung 2025
@@ -1870,202 +1870,182 @@
             <button id="jsonStartUploadBtn" class="btn btn-primary" style="margin-top:24px; width:100%;">🗂️ JSON Upload starten [beta]</button>
         </div>
     </div>
-<script>
-// ===== V27.2 PERSISTENCE: localStorage für Stadtradeln-Zeitraum, Optionen =====
-const STORAGE_KEY = 'gpxtracker_settings_v2';
 
-function saveSettingsToStorage() {
-  const settings = {
-    stadtradelnStart: document.getElementById('stadtradelnStart')?.value || '',
-    stadtradelnEnd:   document.getElementById('stadtradelnEnd')?.value   || '',
-    nachtragEnd:      document.getElementById('nachtragEnd')?.value      || '',
-    minDistance:      document.getElementById('minDistanceKm')?.value    || '2',
-    // Optionen
-    optMaxSpeed:              document.getElementById('optMaxSpeed')?.value || '',
-    optMaxAcceleration:       document.getElementById('optMaxAcceleration')?.value || '',
-    optMaxJumpDistance:       document.getElementById('optMaxJumpDistance')?.value || '',
-    optMinAccuracy:           document.getElementById('optMinAccuracy')?.value || '',
-    optMaxTimeDelta:          document.getElementById('optMaxTimeDelta')?.value || '',
-    optSpeedConsistencyFactor:document.getElementById('optSpeedConsistencyFactor')?.value || '',
-    optMedianFilterWindow:    document.getElementById('optMedianFilterWindow')?.value || '',
-    optWalkMin:  document.getElementById('optWalkMin')?.value || '',
-    optWalkMax:  document.getElementById('optWalkMax')?.value || '',
-    optBikeMin:  document.getElementById('optBikeMin')?.value || '',
-    optBikeMax:  document.getElementById('optBikeMax')?.value || '',
-    optVehicleMin: document.getElementById('optVehicleMin')?.value || '',
-    optVehicleMax: document.getElementById('optVehicleMax')?.value || '',
-    optTrainMin:   document.getElementById('optTrainMin')?.value || '',
-    optTrainMax:   document.getElementById('optTrainMax')?.value || '',
-    optMinTripDistance: document.getElementById('optMinTripDistance')?.value || '',
-    optMinTripDuration: document.getElementById('optMinTripDuration')?.value || '',
-    optMaxPauseDuration:document.getElementById('optMaxPauseDuration')?.value || '',
-  };
-  try { localStorage.setItem(STORAGE_KEY, JSON.stringify(settings)); } catch(e) {}
-}
-
-function loadSettingsFromStorage() {
-  let settings;
-  try { settings = JSON.parse(localStorage.getItem(STORAGE_KEY) || 'null'); } catch(e) { settings = null; }
-  if (!settings) return;
-  const set = (id, val) => { const el = document.getElementById(id); if (el && val !== '') el.value = val; };
-  set('stadtradelnStart', settings.stadtradelnStart);
-  set('stadtradelnEnd',   settings.stadtradelnEnd);
-  set('nachtragEnd',      settings.nachtragEnd);
-  set('minDistanceKm',    settings.minDistance);
-  set('optMaxSpeed',              settings.optMaxSpeed);
-  set('optMaxAcceleration',       settings.optMaxAcceleration);
-  set('optMaxJumpDistance',       settings.optMaxJumpDistance);
-  set('optMinAccuracy',           settings.optMinAccuracy);
-  set('optMaxTimeDelta',          settings.optMaxTimeDelta);
-  set('optSpeedConsistencyFactor',settings.optSpeedConsistencyFactor);
-  set('optMedianFilterWindow',    settings.optMedianFilterWindow);
-  set('optWalkMin', settings.optWalkMin); set('optWalkMax', settings.optWalkMax);
-  set('optBikeMin', settings.optBikeMin); set('optBikeMax', settings.optBikeMax);
-  set('optVehicleMin', settings.optVehicleMin); set('optVehicleMax', settings.optVehicleMax);
-  set('optTrainMin',   settings.optTrainMin);   set('optTrainMax',   settings.optTrainMax);
-  set('optMinTripDistance', settings.optMinTripDistance);
-  set('optMinTripDuration', settings.optMinTripDuration);
-  set('optMaxPauseDuration',settings.optMaxPauseDuration);
-  // Werte sofort anwenden
-  if (typeof updateStadtradelnPeriod === 'function') updateStadtradelnPeriod();
-}
-
-function resetSettingsToDefault() {
-  if (!confirm('Alle gespeicherten Einstellungen zurücksetzen?')) return;
-  try { localStorage.removeItem(STORAGE_KEY); } catch(e) {}
-  // Stadtradeln-Defaults
-  const y = new Date().getFullYear();
-  const set = (id, val) => { const el = document.getElementById(id); if (el) el.value = val; };
-  set('stadtradelnStart', y + '-06-29');
-  set('stadtradelnEnd',   y + '-07-19');
-  set('nachtragEnd',      y + '-07-26');
-  set('minDistanceKm',    '2');
-  if (typeof updateStadtradelnPeriod === 'function') updateStadtradelnPeriod();
-  if (typeof resetOptionsToDefault === 'function') resetOptionsToDefault();
-  alert('Einstellungen zurückgesetzt.');
-}
-
-// Auto-save: bei jeder Änderung an Datum-Feldern
-['stadtradelnStart','stadtradelnEnd','nachtragEnd','minDistanceKm'].forEach(id => {
-  const el = document.getElementById(id);
-  if (el) el.addEventListener('change', saveSettingsToStorage);
-});
-
-// Beim Speichern der Optionen auch Settings speichern
-const _origSaveOptions = typeof saveOptions === 'function' ? saveOptions : null;
-if (_origSaveOptions) {
-  // Wir wrappen saveOptions um Storage-Call zu ergänzen
-  window._origSaveOptions = _origSaveOptions;
-}
-
-// Storage laden beim Start
-document.addEventListener('DOMContentLoaded', function() {
-  loadSettingsFromStorage();
-});
-// Falls DOM schon geladen:
-if (document.readyState !== 'loading') {
-  loadSettingsFromStorage();
-}
-// ===== ENDE PERSISTENCE =====
-</script>
-
-<!-- ===== V27.2 FIRST-RUN MODAL ===== -->
-<div id="firstRunModal" style="display:none;position:fixed;inset:0;background:rgba(14,59,74,0.88);z-index:99999;align-items:center;justify-content:center;padding:16px">
-  <div style="background:#15425a;border:2px solid #c1ff00;border-radius:18px;max-width:520px;width:100%;padding:32px;box-shadow:0 20px 60px rgba(0,0,0,0.35)">
+<!-- ===== FIRST-RUN MODAL ===== -->
+<div id="firstRunModal" style="display:none;position:fixed;inset:0;background:rgba(14,59,74,0.92);z-index:99999;align-items:center;justify-content:center;padding:16px">
+  <div style="background:#15425a;border:2px solid #c1ff00;border-radius:18px;max-width:500px;width:100%;padding:32px;box-shadow:0 20px 60px rgba(0,0,0,0.4)">
     <div style="text-align:center;margin-bottom:24px">
-      <div style="font-size:3rem;margin-bottom:12px">🚴‍♂️</div>
-      <h2 style="margin:0 0 8px;color:#c1ff00;font-size:1.5rem">Willkommen beim GPS Tracker!</h2>
-      <p style="margin:0;color:#b8cbd6;font-size:0.95rem">Damit das Tool korrekt funktioniert, trage bitte zuerst deinen <strong style="color:#fff">Stadtradeln-Zeitraum</strong> ein.</p>
+      <div style="font-size:3rem;margin-bottom:10px">🚴‍♂️</div>
+      <h2 style="margin:0 0 8px;color:#c1ff00;font-size:1.4rem">Willkommen beim GPS Tracker!</h2>
+      <p style="margin:0;color:#b8cbd6;font-size:0.92rem">Bitte deinen <strong style="color:#fff">Stadtradeln-Zeitraum</strong> eingeben – wird für zukünftige Besuche gespeichert.</p>
     </div>
-    <div style="display:grid;gap:14px;margin-bottom:24px">
+    <div style="display:grid;gap:12px;margin-bottom:22px">
       <div style="background:#0e3b4a;border-radius:10px;padding:14px;border:1px solid #1e4a5f">
-        <label style="display:block;color:#c1ff00;font-size:0.88rem;font-weight:700;margin-bottom:6px">Stadtradeln Startdatum</label>
-        <input type="date" id="frStart" style="width:100%;padding:10px 12px;background:#15425a;border:1px solid #1e4a5f;color:#fff;border-radius:8px;font-size:1rem">
+        <label style="display:block;color:#c1ff00;font-size:0.85rem;font-weight:700;margin-bottom:6px">Stadtradeln Startdatum</label>
+        <input type="date" id="frStart" style="width:100%;padding:10px;background:#15425a;border:1px solid #1e4a5f;color:#fff;border-radius:8px;font-size:0.95rem;box-sizing:border-box">
       </div>
       <div style="background:#0e3b4a;border-radius:10px;padding:14px;border:1px solid #1e4a5f">
-        <label style="display:block;color:#c1ff00;font-size:0.88rem;font-weight:700;margin-bottom:6px">Stadtradeln Enddatum</label>
-        <input type="date" id="frEnd" style="width:100%;padding:10px 12px;background:#15425a;border:1px solid #1e4a5f;color:#fff;border-radius:8px;font-size:1rem">
+        <label style="display:block;color:#c1ff00;font-size:0.85rem;font-weight:700;margin-bottom:6px">Stadtradeln Enddatum</label>
+        <input type="date" id="frEnd" style="width:100%;padding:10px;background:#15425a;border:1px solid #1e4a5f;color:#fff;border-radius:8px;font-size:0.95rem;box-sizing:border-box">
       </div>
       <div style="background:#0e3b4a;border-radius:10px;padding:14px;border:1px solid #1e4a5f">
-        <label style="display:block;color:#c1ff00;font-size:0.88rem;font-weight:700;margin-bottom:6px">Nachtrag-Ende <span style="color:#b8cbd6;font-weight:400">(optional, Standard: +7 Tage)</span></label>
-        <input type="date" id="frNachtrag" style="width:100%;padding:10px 12px;background:#15425a;border:1px solid #1e4a5f;color:#fff;border-radius:8px;font-size:1rem">
+        <label style="display:block;color:#c1ff00;font-size:0.85rem;font-weight:700;margin-bottom:6px">Nachtrag-Ende <span style="color:#b8cbd6;font-weight:400">(Standard: +7 Tage)</span></label>
+        <input type="date" id="frNachtrag" style="width:100%;padding:10px;background:#15425a;border:1px solid #1e4a5f;color:#fff;border-radius:8px;font-size:0.95rem;box-sizing:border-box">
       </div>
       <div style="background:#0e3b4a;border-radius:10px;padding:14px;border:1px solid #1e4a5f">
-        <label style="display:block;color:#c1ff00;font-size:0.88rem;font-weight:700;margin-bottom:6px">Minimale Distanz (km)</label>
-        <input type="number" id="frMinDist" value="2" min="0" step="0.1" style="width:100%;padding:10px 12px;background:#15425a;border:1px solid #1e4a5f;color:#fff;border-radius:8px;font-size:1rem">
+        <label style="display:block;color:#c1ff00;font-size:0.85rem;font-weight:700;margin-bottom:6px">Minimale Distanz (km)</label>
+        <input type="number" id="frMinDist" value="2" min="0" step="0.1" style="width:100%;padding:10px;background:#15425a;border:1px solid #1e4a5f;color:#fff;border-radius:8px;font-size:0.95rem;box-sizing:border-box">
       </div>
     </div>
-    <div style="display:flex;gap:12px">
-      <button onclick="applyFirstRun()" style="flex:1;background:linear-gradient(135deg,#c1ff00,#a2e900);color:#0e3b4a;border:none;padding:14px;border-radius:10px;font-weight:800;font-size:1rem;cursor:pointer">Speichern & loslegen 🚴‍♂️</button>
-      <button onclick="closeFirstRun()" style="background:rgba(255,255,255,0.08);color:#b8cbd6;border:1px solid rgba(255,255,255,0.15);padding:14px 18px;border-radius:10px;font-weight:600;cursor:pointer">Überspringen</button>
+    <div style="display:flex;gap:10px">
+      <button onclick="applyFirstRun()" style="flex:1;background:linear-gradient(135deg,#c1ff00,#a2e900);color:#0e3b4a;border:none;padding:14px;border-radius:10px;font-weight:800;font-size:0.98rem;cursor:pointer">Speichern & starten 🚴‍♂️</button>
+      <button onclick="closeFirstRun()" style="background:rgba(255,255,255,0.07);color:#b8cbd6;border:1px solid rgba(255,255,255,0.15);padding:14px 16px;border-radius:10px;font-weight:600;cursor:pointer;font-size:0.9rem">Überspringen</button>
     </div>
   </div>
 </div>
 
+
 <script>
+// ===== V27.2 PERSISTENCE =====
 (function() {
   var STORAGE_KEY = 'gpxtracker_settings_v2';
   var FIRSTRUN_KEY = 'gpxtracker_firstrun_done';
 
-  function showFirstRun() {
-    var modal = document.getElementById('firstRunModal');
-    if (!modal) return;
-    modal.style.display = 'flex';
-    // Vorschlagswerte: aktuelles Jahr
-    var y = new Date().getFullYear();
-    document.getElementById('frStart').value    = y + '-06-29';
-    document.getElementById('frEnd').value      = y + '-07-19';
-    document.getElementById('frNachtrag').value = y + '-07-26';
-    document.getElementById('frMinDist').value  = '2';
-  }
+  // --- Save ---
+  window.saveSettingsToStorage = function() {
+    var settings = {
+      stadtradelnStart: document.getElementById('stadtradelnStart')?.value || '',
+      stadtradelnEnd:   document.getElementById('stadtradelnEnd')?.value   || '',
+      nachtragEnd:      document.getElementById('nachtragEnd')?.value      || '',
+      minDistance:      document.getElementById('minDistance')?.value      || '2',
+      optMaxSpeed:              document.getElementById('optMaxSpeed')?.value || '',
+      optMaxAcceleration:       document.getElementById('optMaxAcceleration')?.value || '',
+      optMaxJumpDistance:       document.getElementById('optMaxJumpDistance')?.value || '',
+      optMinAccuracy:           document.getElementById('optMinAccuracy')?.value || '',
+      optMaxTimeDelta:          document.getElementById('optMaxTimeDelta')?.value || '',
+      optSpeedConsistencyFactor:document.getElementById('optSpeedConsistencyFactor')?.value || '',
+      optMedianFilterWindow:    document.getElementById('optMedianFilterWindow')?.value || '',
+      optWalkMin:  document.getElementById('optWalkMin')?.value  || '',
+      optWalkMax:  document.getElementById('optWalkMax')?.value  || '',
+      optBikeMin:  document.getElementById('optBikeMin')?.value  || '',
+      optBikeMax:  document.getElementById('optBikeMax')?.value  || '',
+      optVehicleMin: document.getElementById('optVehicleMin')?.value || '',
+      optVehicleMax: document.getElementById('optVehicleMax')?.value || '',
+      optTrainMin:   document.getElementById('optTrainMin')?.value   || '',
+      optTrainMax:   document.getElementById('optTrainMax')?.value   || '',
+      optMinTripDistance:  document.getElementById('optMinTripDistance')?.value  || '',
+      optMinTripDuration:  document.getElementById('optMinTripDuration')?.value  || '',
+      optMaxPauseDuration: document.getElementById('optMaxPauseDuration')?.value || ''
+    };
+    try { localStorage.setItem(STORAGE_KEY, JSON.stringify(settings)); } catch(e) {}
+  };
 
+  // --- Load ---
+  window.loadSettingsFromStorage = function() {
+    var settings;
+    try { settings = JSON.parse(localStorage.getItem(STORAGE_KEY) || 'null'); } catch(e) { settings = null; }
+    if (!settings) return;
+    var set = function(id, val) {
+      var el = document.getElementById(id);
+      if (el && val !== undefined && val !== '') el.value = val;
+    };
+    set('stadtradelnStart', settings.stadtradelnStart);
+    set('stadtradelnEnd',   settings.stadtradelnEnd);
+    set('nachtragEnd',      settings.nachtragEnd);
+    set('minDistance',      settings.minDistance);
+    set('optMaxSpeed',               settings.optMaxSpeed);
+    set('optMaxAcceleration',        settings.optMaxAcceleration);
+    set('optMaxJumpDistance',        settings.optMaxJumpDistance);
+    set('optMinAccuracy',            settings.optMinAccuracy);
+    set('optMaxTimeDelta',           settings.optMaxTimeDelta);
+    set('optSpeedConsistencyFactor', settings.optSpeedConsistencyFactor);
+    set('optMedianFilterWindow',     settings.optMedianFilterWindow);
+    set('optWalkMin', settings.optWalkMin); set('optWalkMax', settings.optWalkMax);
+    set('optBikeMin', settings.optBikeMin); set('optBikeMax', settings.optBikeMax);
+    set('optVehicleMin', settings.optVehicleMin); set('optVehicleMax', settings.optVehicleMax);
+    set('optTrainMin',   settings.optTrainMin);   set('optTrainMax',   settings.optTrainMax);
+    set('optMinTripDistance',  settings.optMinTripDistance);
+    set('optMinTripDuration',  settings.optMinTripDuration);
+    set('optMaxPauseDuration', settings.optMaxPauseDuration);
+    // Periode neu berechnen — nur updateStadtradelnPeriod, kein applyFilters
+    if (typeof updateStadtradelnPeriod === 'function') updateStadtradelnPeriod();
+  };
+
+  // --- Reset ---
+  window.resetSettingsToDefault = function() {
+    if (!confirm('Alle gespeicherten Einstellungen zurücksetzen?')) return;
+    try { localStorage.removeItem(STORAGE_KEY); localStorage.removeItem(FIRSTRUN_KEY); } catch(e) {}
+    var y = new Date().getFullYear();
+    var set = function(id, val) { var el = document.getElementById(id); if (el) el.value = val; };
+    set('stadtradelnStart', y + '-06-29');
+    set('stadtradelnEnd',   y + '-07-19');
+    set('nachtragEnd',      y + '-07-26');
+    set('minDistance', '2');
+    if (typeof updateStadtradelnPeriod === 'function') updateStadtradelnPeriod();
+    if (typeof resetOptionsToDefault   === 'function') resetOptionsToDefault();
+    alert('Einstellungen zurückgesetzt.');
+  };
+
+  // --- First-Run Modal ---
   window.applyFirstRun = function() {
     var start    = document.getElementById('frStart').value;
     var end      = document.getElementById('frEnd').value;
     var nachtrag = document.getElementById('frNachtrag').value;
-    var minDist  = document.getElementById('frMinDist').value;
+    var minDist  = document.getElementById('frMinDist').value || '2';
     if (!start || !end) { alert('Bitte Startdatum und Enddatum eingeben.'); return; }
-    // In Hauptformular übertragen
-    var setVal = function(id, v) { var el = document.getElementById(id); if (el) { el.value = v; el.dispatchEvent(new Event('change')); } };
-    setVal('stadtradelnStart', start);
-    setVal('stadtradelnEnd',   end);
-    setVal('nachtragEnd',      nachtrag);
-    setVal('minDistanceKm',    minDist);
-    // Auch minDistance falls andere ID
-    setVal('minDistance', minDist);
-    // updateStadtradelnPeriod aufrufen
+    // Werte direkt setzen — KEIN dispatchEvent, um vorzeitige applyFilters-Aufrufe zu vermeiden
+    var set = function(id, val) { var el = document.getElementById(id); if (el) el.value = val; };
+    set('stadtradelnStart', start);
+    set('stadtradelnEnd',   end);
+    if (nachtrag) set('nachtragEnd', nachtrag);
+    set('minDistance', minDist);
+    // Erst jetzt Periode berechnen (Wochen aufbauen) — dann erst Filter
     if (typeof updateStadtradelnPeriod === 'function') updateStadtradelnPeriod();
-    // Als erledigt markieren
+    // Einstellungen speichern
+    window.saveSettingsToStorage();
     try { localStorage.setItem(FIRSTRUN_KEY, '1'); } catch(e) {}
-    // Einstellungen sofort speichern
-    if (typeof saveSettingsToStorage === 'function') saveSettingsToStorage();
-    closeFirstRun();
+    document.getElementById('firstRunModal').style.display = 'none';
   };
 
   window.closeFirstRun = function() {
-    var modal = document.getElementById('firstRunModal');
-    if (modal) modal.style.display = 'none';
+    document.getElementById('firstRunModal').style.display = 'none';
     try { localStorage.setItem(FIRSTRUN_KEY, '1'); } catch(e) {}
   };
 
+  // --- Auto-save auf Datum-Feldern ---
+  ['stadtradelnStart','stadtradelnEnd','nachtragEnd','minDistance'].forEach(function(id) {
+    var el = document.getElementById(id);
+    if (el) el.addEventListener('change', window.saveSettingsToStorage);
+  });
+
+  // --- Init: erst laden wenn DOM bereit ---
   function init() {
-    var done    = false;
-    var hasSettings = false;
+    var done = false, hasSettings = false;
     try { done = !!localStorage.getItem(FIRSTRUN_KEY); } catch(e) {}
     try { hasSettings = !!localStorage.getItem(STORAGE_KEY); } catch(e) {}
-    if (!done && !hasSettings) {
-      setTimeout(showFirstRun, 600);
+    if (hasSettings) {
+      window.loadSettingsFromStorage();
+    } else if (!done) {
+      setTimeout(function() {
+        var modal = document.getElementById('firstRunModal');
+        if (!modal) return;
+        modal.style.display = 'flex';
+        var y = new Date().getFullYear();
+        document.getElementById('frStart').value    = y + '-06-29';
+        document.getElementById('frEnd').value      = y + '-07-19';
+        document.getElementById('frNachtrag').value = y + '-07-26';
+        document.getElementById('frMinDist').value  = '2';
+      }, 700);
     }
   }
 
   if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', init);
   } else {
-    init();
+    setTimeout(init, 100);
   }
 })();
 </script>
-<!-- ===== ENDE FIRST-RUN MODAL ===== -->
 
 </body>
 
@@ -5348,202 +5328,182 @@ if (document.readyState !== 'loading') {
 
     </script>
 	
-<script>
-// ===== V27.2 PERSISTENCE: localStorage für Stadtradeln-Zeitraum, Optionen =====
-const STORAGE_KEY = 'gpxtracker_settings_v2';
 
-function saveSettingsToStorage() {
-  const settings = {
-    stadtradelnStart: document.getElementById('stadtradelnStart')?.value || '',
-    stadtradelnEnd:   document.getElementById('stadtradelnEnd')?.value   || '',
-    nachtragEnd:      document.getElementById('nachtragEnd')?.value      || '',
-    minDistance:      document.getElementById('minDistanceKm')?.value    || '2',
-    // Optionen
-    optMaxSpeed:              document.getElementById('optMaxSpeed')?.value || '',
-    optMaxAcceleration:       document.getElementById('optMaxAcceleration')?.value || '',
-    optMaxJumpDistance:       document.getElementById('optMaxJumpDistance')?.value || '',
-    optMinAccuracy:           document.getElementById('optMinAccuracy')?.value || '',
-    optMaxTimeDelta:          document.getElementById('optMaxTimeDelta')?.value || '',
-    optSpeedConsistencyFactor:document.getElementById('optSpeedConsistencyFactor')?.value || '',
-    optMedianFilterWindow:    document.getElementById('optMedianFilterWindow')?.value || '',
-    optWalkMin:  document.getElementById('optWalkMin')?.value || '',
-    optWalkMax:  document.getElementById('optWalkMax')?.value || '',
-    optBikeMin:  document.getElementById('optBikeMin')?.value || '',
-    optBikeMax:  document.getElementById('optBikeMax')?.value || '',
-    optVehicleMin: document.getElementById('optVehicleMin')?.value || '',
-    optVehicleMax: document.getElementById('optVehicleMax')?.value || '',
-    optTrainMin:   document.getElementById('optTrainMin')?.value || '',
-    optTrainMax:   document.getElementById('optTrainMax')?.value || '',
-    optMinTripDistance: document.getElementById('optMinTripDistance')?.value || '',
-    optMinTripDuration: document.getElementById('optMinTripDuration')?.value || '',
-    optMaxPauseDuration:document.getElementById('optMaxPauseDuration')?.value || '',
-  };
-  try { localStorage.setItem(STORAGE_KEY, JSON.stringify(settings)); } catch(e) {}
-}
-
-function loadSettingsFromStorage() {
-  let settings;
-  try { settings = JSON.parse(localStorage.getItem(STORAGE_KEY) || 'null'); } catch(e) { settings = null; }
-  if (!settings) return;
-  const set = (id, val) => { const el = document.getElementById(id); if (el && val !== '') el.value = val; };
-  set('stadtradelnStart', settings.stadtradelnStart);
-  set('stadtradelnEnd',   settings.stadtradelnEnd);
-  set('nachtragEnd',      settings.nachtragEnd);
-  set('minDistanceKm',    settings.minDistance);
-  set('optMaxSpeed',              settings.optMaxSpeed);
-  set('optMaxAcceleration',       settings.optMaxAcceleration);
-  set('optMaxJumpDistance',       settings.optMaxJumpDistance);
-  set('optMinAccuracy',           settings.optMinAccuracy);
-  set('optMaxTimeDelta',          settings.optMaxTimeDelta);
-  set('optSpeedConsistencyFactor',settings.optSpeedConsistencyFactor);
-  set('optMedianFilterWindow',    settings.optMedianFilterWindow);
-  set('optWalkMin', settings.optWalkMin); set('optWalkMax', settings.optWalkMax);
-  set('optBikeMin', settings.optBikeMin); set('optBikeMax', settings.optBikeMax);
-  set('optVehicleMin', settings.optVehicleMin); set('optVehicleMax', settings.optVehicleMax);
-  set('optTrainMin',   settings.optTrainMin);   set('optTrainMax',   settings.optTrainMax);
-  set('optMinTripDistance', settings.optMinTripDistance);
-  set('optMinTripDuration', settings.optMinTripDuration);
-  set('optMaxPauseDuration',settings.optMaxPauseDuration);
-  // Werte sofort anwenden
-  if (typeof updateStadtradelnPeriod === 'function') updateStadtradelnPeriod();
-}
-
-function resetSettingsToDefault() {
-  if (!confirm('Alle gespeicherten Einstellungen zurücksetzen?')) return;
-  try { localStorage.removeItem(STORAGE_KEY); } catch(e) {}
-  // Stadtradeln-Defaults
-  const y = new Date().getFullYear();
-  const set = (id, val) => { const el = document.getElementById(id); if (el) el.value = val; };
-  set('stadtradelnStart', y + '-06-29');
-  set('stadtradelnEnd',   y + '-07-19');
-  set('nachtragEnd',      y + '-07-26');
-  set('minDistanceKm',    '2');
-  if (typeof updateStadtradelnPeriod === 'function') updateStadtradelnPeriod();
-  if (typeof resetOptionsToDefault === 'function') resetOptionsToDefault();
-  alert('Einstellungen zurückgesetzt.');
-}
-
-// Auto-save: bei jeder Änderung an Datum-Feldern
-['stadtradelnStart','stadtradelnEnd','nachtragEnd','minDistanceKm'].forEach(id => {
-  const el = document.getElementById(id);
-  if (el) el.addEventListener('change', saveSettingsToStorage);
-});
-
-// Beim Speichern der Optionen auch Settings speichern
-const _origSaveOptions = typeof saveOptions === 'function' ? saveOptions : null;
-if (_origSaveOptions) {
-  // Wir wrappen saveOptions um Storage-Call zu ergänzen
-  window._origSaveOptions = _origSaveOptions;
-}
-
-// Storage laden beim Start
-document.addEventListener('DOMContentLoaded', function() {
-  loadSettingsFromStorage();
-});
-// Falls DOM schon geladen:
-if (document.readyState !== 'loading') {
-  loadSettingsFromStorage();
-}
-// ===== ENDE PERSISTENCE =====
-</script>
-
-<!-- ===== V27.2 FIRST-RUN MODAL ===== -->
-<div id="firstRunModal" style="display:none;position:fixed;inset:0;background:rgba(14,59,74,0.88);z-index:99999;align-items:center;justify-content:center;padding:16px">
-  <div style="background:#15425a;border:2px solid #c1ff00;border-radius:18px;max-width:520px;width:100%;padding:32px;box-shadow:0 20px 60px rgba(0,0,0,0.35)">
+<!-- ===== FIRST-RUN MODAL ===== -->
+<div id="firstRunModal" style="display:none;position:fixed;inset:0;background:rgba(14,59,74,0.92);z-index:99999;align-items:center;justify-content:center;padding:16px">
+  <div style="background:#15425a;border:2px solid #c1ff00;border-radius:18px;max-width:500px;width:100%;padding:32px;box-shadow:0 20px 60px rgba(0,0,0,0.4)">
     <div style="text-align:center;margin-bottom:24px">
-      <div style="font-size:3rem;margin-bottom:12px">🚴‍♂️</div>
-      <h2 style="margin:0 0 8px;color:#c1ff00;font-size:1.5rem">Willkommen beim GPS Tracker!</h2>
-      <p style="margin:0;color:#b8cbd6;font-size:0.95rem">Damit das Tool korrekt funktioniert, trage bitte zuerst deinen <strong style="color:#fff">Stadtradeln-Zeitraum</strong> ein.</p>
+      <div style="font-size:3rem;margin-bottom:10px">🚴‍♂️</div>
+      <h2 style="margin:0 0 8px;color:#c1ff00;font-size:1.4rem">Willkommen beim GPS Tracker!</h2>
+      <p style="margin:0;color:#b8cbd6;font-size:0.92rem">Bitte deinen <strong style="color:#fff">Stadtradeln-Zeitraum</strong> eingeben – wird für zukünftige Besuche gespeichert.</p>
     </div>
-    <div style="display:grid;gap:14px;margin-bottom:24px">
+    <div style="display:grid;gap:12px;margin-bottom:22px">
       <div style="background:#0e3b4a;border-radius:10px;padding:14px;border:1px solid #1e4a5f">
-        <label style="display:block;color:#c1ff00;font-size:0.88rem;font-weight:700;margin-bottom:6px">Stadtradeln Startdatum</label>
-        <input type="date" id="frStart" style="width:100%;padding:10px 12px;background:#15425a;border:1px solid #1e4a5f;color:#fff;border-radius:8px;font-size:1rem">
+        <label style="display:block;color:#c1ff00;font-size:0.85rem;font-weight:700;margin-bottom:6px">Stadtradeln Startdatum</label>
+        <input type="date" id="frStart" style="width:100%;padding:10px;background:#15425a;border:1px solid #1e4a5f;color:#fff;border-radius:8px;font-size:0.95rem;box-sizing:border-box">
       </div>
       <div style="background:#0e3b4a;border-radius:10px;padding:14px;border:1px solid #1e4a5f">
-        <label style="display:block;color:#c1ff00;font-size:0.88rem;font-weight:700;margin-bottom:6px">Stadtradeln Enddatum</label>
-        <input type="date" id="frEnd" style="width:100%;padding:10px 12px;background:#15425a;border:1px solid #1e4a5f;color:#fff;border-radius:8px;font-size:1rem">
+        <label style="display:block;color:#c1ff00;font-size:0.85rem;font-weight:700;margin-bottom:6px">Stadtradeln Enddatum</label>
+        <input type="date" id="frEnd" style="width:100%;padding:10px;background:#15425a;border:1px solid #1e4a5f;color:#fff;border-radius:8px;font-size:0.95rem;box-sizing:border-box">
       </div>
       <div style="background:#0e3b4a;border-radius:10px;padding:14px;border:1px solid #1e4a5f">
-        <label style="display:block;color:#c1ff00;font-size:0.88rem;font-weight:700;margin-bottom:6px">Nachtrag-Ende <span style="color:#b8cbd6;font-weight:400">(optional, Standard: +7 Tage)</span></label>
-        <input type="date" id="frNachtrag" style="width:100%;padding:10px 12px;background:#15425a;border:1px solid #1e4a5f;color:#fff;border-radius:8px;font-size:1rem">
+        <label style="display:block;color:#c1ff00;font-size:0.85rem;font-weight:700;margin-bottom:6px">Nachtrag-Ende <span style="color:#b8cbd6;font-weight:400">(Standard: +7 Tage)</span></label>
+        <input type="date" id="frNachtrag" style="width:100%;padding:10px;background:#15425a;border:1px solid #1e4a5f;color:#fff;border-radius:8px;font-size:0.95rem;box-sizing:border-box">
       </div>
       <div style="background:#0e3b4a;border-radius:10px;padding:14px;border:1px solid #1e4a5f">
-        <label style="display:block;color:#c1ff00;font-size:0.88rem;font-weight:700;margin-bottom:6px">Minimale Distanz (km)</label>
-        <input type="number" id="frMinDist" value="2" min="0" step="0.1" style="width:100%;padding:10px 12px;background:#15425a;border:1px solid #1e4a5f;color:#fff;border-radius:8px;font-size:1rem">
+        <label style="display:block;color:#c1ff00;font-size:0.85rem;font-weight:700;margin-bottom:6px">Minimale Distanz (km)</label>
+        <input type="number" id="frMinDist" value="2" min="0" step="0.1" style="width:100%;padding:10px;background:#15425a;border:1px solid #1e4a5f;color:#fff;border-radius:8px;font-size:0.95rem;box-sizing:border-box">
       </div>
     </div>
-    <div style="display:flex;gap:12px">
-      <button onclick="applyFirstRun()" style="flex:1;background:linear-gradient(135deg,#c1ff00,#a2e900);color:#0e3b4a;border:none;padding:14px;border-radius:10px;font-weight:800;font-size:1rem;cursor:pointer">Speichern & loslegen 🚴‍♂️</button>
-      <button onclick="closeFirstRun()" style="background:rgba(255,255,255,0.08);color:#b8cbd6;border:1px solid rgba(255,255,255,0.15);padding:14px 18px;border-radius:10px;font-weight:600;cursor:pointer">Überspringen</button>
+    <div style="display:flex;gap:10px">
+      <button onclick="applyFirstRun()" style="flex:1;background:linear-gradient(135deg,#c1ff00,#a2e900);color:#0e3b4a;border:none;padding:14px;border-radius:10px;font-weight:800;font-size:0.98rem;cursor:pointer">Speichern & starten 🚴‍♂️</button>
+      <button onclick="closeFirstRun()" style="background:rgba(255,255,255,0.07);color:#b8cbd6;border:1px solid rgba(255,255,255,0.15);padding:14px 16px;border-radius:10px;font-weight:600;cursor:pointer;font-size:0.9rem">Überspringen</button>
     </div>
   </div>
 </div>
 
+
 <script>
+// ===== V27.2 PERSISTENCE =====
 (function() {
   var STORAGE_KEY = 'gpxtracker_settings_v2';
   var FIRSTRUN_KEY = 'gpxtracker_firstrun_done';
 
-  function showFirstRun() {
-    var modal = document.getElementById('firstRunModal');
-    if (!modal) return;
-    modal.style.display = 'flex';
-    // Vorschlagswerte: aktuelles Jahr
-    var y = new Date().getFullYear();
-    document.getElementById('frStart').value    = y + '-06-29';
-    document.getElementById('frEnd').value      = y + '-07-19';
-    document.getElementById('frNachtrag').value = y + '-07-26';
-    document.getElementById('frMinDist').value  = '2';
-  }
+  // --- Save ---
+  window.saveSettingsToStorage = function() {
+    var settings = {
+      stadtradelnStart: document.getElementById('stadtradelnStart')?.value || '',
+      stadtradelnEnd:   document.getElementById('stadtradelnEnd')?.value   || '',
+      nachtragEnd:      document.getElementById('nachtragEnd')?.value      || '',
+      minDistance:      document.getElementById('minDistance')?.value      || '2',
+      optMaxSpeed:              document.getElementById('optMaxSpeed')?.value || '',
+      optMaxAcceleration:       document.getElementById('optMaxAcceleration')?.value || '',
+      optMaxJumpDistance:       document.getElementById('optMaxJumpDistance')?.value || '',
+      optMinAccuracy:           document.getElementById('optMinAccuracy')?.value || '',
+      optMaxTimeDelta:          document.getElementById('optMaxTimeDelta')?.value || '',
+      optSpeedConsistencyFactor:document.getElementById('optSpeedConsistencyFactor')?.value || '',
+      optMedianFilterWindow:    document.getElementById('optMedianFilterWindow')?.value || '',
+      optWalkMin:  document.getElementById('optWalkMin')?.value  || '',
+      optWalkMax:  document.getElementById('optWalkMax')?.value  || '',
+      optBikeMin:  document.getElementById('optBikeMin')?.value  || '',
+      optBikeMax:  document.getElementById('optBikeMax')?.value  || '',
+      optVehicleMin: document.getElementById('optVehicleMin')?.value || '',
+      optVehicleMax: document.getElementById('optVehicleMax')?.value || '',
+      optTrainMin:   document.getElementById('optTrainMin')?.value   || '',
+      optTrainMax:   document.getElementById('optTrainMax')?.value   || '',
+      optMinTripDistance:  document.getElementById('optMinTripDistance')?.value  || '',
+      optMinTripDuration:  document.getElementById('optMinTripDuration')?.value  || '',
+      optMaxPauseDuration: document.getElementById('optMaxPauseDuration')?.value || ''
+    };
+    try { localStorage.setItem(STORAGE_KEY, JSON.stringify(settings)); } catch(e) {}
+  };
 
+  // --- Load ---
+  window.loadSettingsFromStorage = function() {
+    var settings;
+    try { settings = JSON.parse(localStorage.getItem(STORAGE_KEY) || 'null'); } catch(e) { settings = null; }
+    if (!settings) return;
+    var set = function(id, val) {
+      var el = document.getElementById(id);
+      if (el && val !== undefined && val !== '') el.value = val;
+    };
+    set('stadtradelnStart', settings.stadtradelnStart);
+    set('stadtradelnEnd',   settings.stadtradelnEnd);
+    set('nachtragEnd',      settings.nachtragEnd);
+    set('minDistance',      settings.minDistance);
+    set('optMaxSpeed',               settings.optMaxSpeed);
+    set('optMaxAcceleration',        settings.optMaxAcceleration);
+    set('optMaxJumpDistance',        settings.optMaxJumpDistance);
+    set('optMinAccuracy',            settings.optMinAccuracy);
+    set('optMaxTimeDelta',           settings.optMaxTimeDelta);
+    set('optSpeedConsistencyFactor', settings.optSpeedConsistencyFactor);
+    set('optMedianFilterWindow',     settings.optMedianFilterWindow);
+    set('optWalkMin', settings.optWalkMin); set('optWalkMax', settings.optWalkMax);
+    set('optBikeMin', settings.optBikeMin); set('optBikeMax', settings.optBikeMax);
+    set('optVehicleMin', settings.optVehicleMin); set('optVehicleMax', settings.optVehicleMax);
+    set('optTrainMin',   settings.optTrainMin);   set('optTrainMax',   settings.optTrainMax);
+    set('optMinTripDistance',  settings.optMinTripDistance);
+    set('optMinTripDuration',  settings.optMinTripDuration);
+    set('optMaxPauseDuration', settings.optMaxPauseDuration);
+    // Periode neu berechnen — nur updateStadtradelnPeriod, kein applyFilters
+    if (typeof updateStadtradelnPeriod === 'function') updateStadtradelnPeriod();
+  };
+
+  // --- Reset ---
+  window.resetSettingsToDefault = function() {
+    if (!confirm('Alle gespeicherten Einstellungen zurücksetzen?')) return;
+    try { localStorage.removeItem(STORAGE_KEY); localStorage.removeItem(FIRSTRUN_KEY); } catch(e) {}
+    var y = new Date().getFullYear();
+    var set = function(id, val) { var el = document.getElementById(id); if (el) el.value = val; };
+    set('stadtradelnStart', y + '-06-29');
+    set('stadtradelnEnd',   y + '-07-19');
+    set('nachtragEnd',      y + '-07-26');
+    set('minDistance', '2');
+    if (typeof updateStadtradelnPeriod === 'function') updateStadtradelnPeriod();
+    if (typeof resetOptionsToDefault   === 'function') resetOptionsToDefault();
+    alert('Einstellungen zurückgesetzt.');
+  };
+
+  // --- First-Run Modal ---
   window.applyFirstRun = function() {
     var start    = document.getElementById('frStart').value;
     var end      = document.getElementById('frEnd').value;
     var nachtrag = document.getElementById('frNachtrag').value;
-    var minDist  = document.getElementById('frMinDist').value;
+    var minDist  = document.getElementById('frMinDist').value || '2';
     if (!start || !end) { alert('Bitte Startdatum und Enddatum eingeben.'); return; }
-    // In Hauptformular übertragen
-    var setVal = function(id, v) { var el = document.getElementById(id); if (el) { el.value = v; el.dispatchEvent(new Event('change')); } };
-    setVal('stadtradelnStart', start);
-    setVal('stadtradelnEnd',   end);
-    setVal('nachtragEnd',      nachtrag);
-    setVal('minDistanceKm',    minDist);
-    // Auch minDistance falls andere ID
-    setVal('minDistance', minDist);
-    // updateStadtradelnPeriod aufrufen
+    // Werte direkt setzen — KEIN dispatchEvent, um vorzeitige applyFilters-Aufrufe zu vermeiden
+    var set = function(id, val) { var el = document.getElementById(id); if (el) el.value = val; };
+    set('stadtradelnStart', start);
+    set('stadtradelnEnd',   end);
+    if (nachtrag) set('nachtragEnd', nachtrag);
+    set('minDistance', minDist);
+    // Erst jetzt Periode berechnen (Wochen aufbauen) — dann erst Filter
     if (typeof updateStadtradelnPeriod === 'function') updateStadtradelnPeriod();
-    // Als erledigt markieren
+    // Einstellungen speichern
+    window.saveSettingsToStorage();
     try { localStorage.setItem(FIRSTRUN_KEY, '1'); } catch(e) {}
-    // Einstellungen sofort speichern
-    if (typeof saveSettingsToStorage === 'function') saveSettingsToStorage();
-    closeFirstRun();
+    document.getElementById('firstRunModal').style.display = 'none';
   };
 
   window.closeFirstRun = function() {
-    var modal = document.getElementById('firstRunModal');
-    if (modal) modal.style.display = 'none';
+    document.getElementById('firstRunModal').style.display = 'none';
     try { localStorage.setItem(FIRSTRUN_KEY, '1'); } catch(e) {}
   };
 
+  // --- Auto-save auf Datum-Feldern ---
+  ['stadtradelnStart','stadtradelnEnd','nachtragEnd','minDistance'].forEach(function(id) {
+    var el = document.getElementById(id);
+    if (el) el.addEventListener('change', window.saveSettingsToStorage);
+  });
+
+  // --- Init: erst laden wenn DOM bereit ---
   function init() {
-    var done    = false;
-    var hasSettings = false;
+    var done = false, hasSettings = false;
     try { done = !!localStorage.getItem(FIRSTRUN_KEY); } catch(e) {}
     try { hasSettings = !!localStorage.getItem(STORAGE_KEY); } catch(e) {}
-    if (!done && !hasSettings) {
-      setTimeout(showFirstRun, 600);
+    if (hasSettings) {
+      window.loadSettingsFromStorage();
+    } else if (!done) {
+      setTimeout(function() {
+        var modal = document.getElementById('firstRunModal');
+        if (!modal) return;
+        modal.style.display = 'flex';
+        var y = new Date().getFullYear();
+        document.getElementById('frStart').value    = y + '-06-29';
+        document.getElementById('frEnd').value      = y + '-07-19';
+        document.getElementById('frNachtrag').value = y + '-07-26';
+        document.getElementById('frMinDist').value  = '2';
+      }, 700);
     }
   }
 
   if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', init);
   } else {
-    init();
+    setTimeout(init, 100);
   }
 })();
 </script>
-<!-- ===== ENDE FIRST-RUN MODAL ===== -->
 
 </body>
 </html>
