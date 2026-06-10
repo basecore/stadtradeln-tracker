@@ -1388,7 +1388,7 @@
             🚴‍♂️ GPS Tracker
         </div>
         <div class="user-section">
-            <div class="user-avatar">😊</div>
+            <div class="user-avatar">🚴‍♂️</div>
             <span>GPS Tracker</span>
         </div>
     </div>
@@ -1397,7 +1397,7 @@
         <!-- Sidebar -->
         <div class="sidebar">
             <div class="sidebar-profile">
-                <div class="profile-avatar">😊</div>
+                <div class="profile-avatar">🚴‍♂️</div>
                 <div class="profile-name">GPS Tracker</div>
             </div>
             
@@ -1785,7 +1785,7 @@
                 <h3 class="card-title">ℹ️ Über dieses Tool</h3>
                 <p style="color: #b8cbd6; margin-bottom: 18px;">
                     Hallo! Ich bin leidenschaftlicher Fahrradfahrer und unterstütze gerne die Aktion <b>Stadtradeln</b>.<br><br>
-                    Aus eigener Erfahrung weiß ich, wie leicht man vergisst, in der offiziellen Stadtradeln-App auf „manuell Record" zu klicken. Deshalb habe ich – mit Hilfe von <b>Künstlicher Intelligenz (KI)</b> wie <b>OpenAI GPT-4</b> und modernen Webtechnologien (z.B. <b>JavaScript</b>, <b>Leaflet</b>, <b>Chart.js</b>) – diese Auswerte-Seite entwickelt.<br><br>
+                    Aus eigener Erfahrung weiß ich, wie leicht man vergisst, in der offiziellen Stadtradeln-App auf „manuell Record" zu klicken. Deshalb habe ich – mit Hilfe von <b>Künstlicher Intelligenz (KI)</b> wie <b>Perplexity AI</b> und modernen Webtechnologien (z.B. <b>JavaScript</b>, <b>Leaflet</b>, <b>Chart.js</b>) – diese Auswerte-Seite entwickelt.<br><br>
                     Ziel ist es, <b>GPX-, CSV- und KML/KMZ-Dateien</b> komfortabel auszuwerten und die Fahrten einfach ins Stadtradeln-Portal nachtragen zu können. Vielleicht hilft dieses Tool auch anderen, die ihre Strecken manuell erfassen oder nachtragen möchten.<br><br>
                     <strong>Wozu ist Stadtradeln gut?</strong><br>
                     Stadtradeln ist eine bundesweite Initiative, bei der möglichst viele Menschen im Aktionszeitraum aufs Fahrrad umsteigen, um gemeinsam Kilometer zu sammeln. Das fördert nicht nur den Klimaschutz und die eigene Gesundheit, sondern macht auch Spaß und stärkt die Fahrrad-Community vor Ort.<br><br>
@@ -1800,9 +1800,9 @@
                         <li>Alle Daten bleiben <b>lokal im Browser</b> – es werden <b>keine Daten gespeichert</b> oder weitergegeben</li>
                     </ul>
                     <br>
-                    <strong>Aktuelle Version:</strong> Juni 2025<br>
-                    <strong>Letztes Update:</strong> 13.06.2025<br>
-                    <strong>Verwendete KI:</strong> OpenAI GPT-4 (für Text- und Code-Generierung)<br>
+                    <strong>Aktuelle Version:</strong> Juni 2026<br>
+                    <strong>Letztes Update:</strong> 10.06.2026<br>
+                    <strong>Verwendete KI:</strong> Perplexity AI (für Text- und Code-Generierung)<br>
                     <strong>Kontakt:</strong> <a href="mailto:basecore@gmx.de" style="color:#c1ff00;">basecore@gmx.de</a><br><br>
                     Dieses Tool ist ein privates, kostenloses Angebot ohne kommerzielle Interessen. Die Nutzung erfolgt ohne Gewähr. Ich freue mich über Feedback, Anregungen oder Fragen!
                 </p>
@@ -1968,6 +1968,105 @@ if (document.readyState !== 'loading') {
 }
 // ===== ENDE PERSISTENCE =====
 </script>
+
+<!-- ===== V27.2 FIRST-RUN MODAL ===== -->
+<div id="firstRunModal" style="display:none;position:fixed;inset:0;background:rgba(14,59,74,0.88);z-index:99999;align-items:center;justify-content:center;padding:16px">
+  <div style="background:#15425a;border:2px solid #c1ff00;border-radius:18px;max-width:520px;width:100%;padding:32px;box-shadow:0 20px 60px rgba(0,0,0,0.35)">
+    <div style="text-align:center;margin-bottom:24px">
+      <div style="font-size:3rem;margin-bottom:12px">🚴‍♂️</div>
+      <h2 style="margin:0 0 8px;color:#c1ff00;font-size:1.5rem">Willkommen beim GPS Tracker!</h2>
+      <p style="margin:0;color:#b8cbd6;font-size:0.95rem">Damit das Tool korrekt funktioniert, trage bitte zuerst deinen <strong style="color:#fff">Stadtradeln-Zeitraum</strong> ein.</p>
+    </div>
+    <div style="display:grid;gap:14px;margin-bottom:24px">
+      <div style="background:#0e3b4a;border-radius:10px;padding:14px;border:1px solid #1e4a5f">
+        <label style="display:block;color:#c1ff00;font-size:0.88rem;font-weight:700;margin-bottom:6px">Stadtradeln Startdatum</label>
+        <input type="date" id="frStart" style="width:100%;padding:10px 12px;background:#15425a;border:1px solid #1e4a5f;color:#fff;border-radius:8px;font-size:1rem">
+      </div>
+      <div style="background:#0e3b4a;border-radius:10px;padding:14px;border:1px solid #1e4a5f">
+        <label style="display:block;color:#c1ff00;font-size:0.88rem;font-weight:700;margin-bottom:6px">Stadtradeln Enddatum</label>
+        <input type="date" id="frEnd" style="width:100%;padding:10px 12px;background:#15425a;border:1px solid #1e4a5f;color:#fff;border-radius:8px;font-size:1rem">
+      </div>
+      <div style="background:#0e3b4a;border-radius:10px;padding:14px;border:1px solid #1e4a5f">
+        <label style="display:block;color:#c1ff00;font-size:0.88rem;font-weight:700;margin-bottom:6px">Nachtrag-Ende <span style="color:#b8cbd6;font-weight:400">(optional, Standard: +7 Tage)</span></label>
+        <input type="date" id="frNachtrag" style="width:100%;padding:10px 12px;background:#15425a;border:1px solid #1e4a5f;color:#fff;border-radius:8px;font-size:1rem">
+      </div>
+      <div style="background:#0e3b4a;border-radius:10px;padding:14px;border:1px solid #1e4a5f">
+        <label style="display:block;color:#c1ff00;font-size:0.88rem;font-weight:700;margin-bottom:6px">Minimale Distanz (km)</label>
+        <input type="number" id="frMinDist" value="2" min="0" step="0.1" style="width:100%;padding:10px 12px;background:#15425a;border:1px solid #1e4a5f;color:#fff;border-radius:8px;font-size:1rem">
+      </div>
+    </div>
+    <div style="display:flex;gap:12px">
+      <button onclick="applyFirstRun()" style="flex:1;background:linear-gradient(135deg,#c1ff00,#a2e900);color:#0e3b4a;border:none;padding:14px;border-radius:10px;font-weight:800;font-size:1rem;cursor:pointer">Speichern & loslegen 🚴‍♂️</button>
+      <button onclick="closeFirstRun()" style="background:rgba(255,255,255,0.08);color:#b8cbd6;border:1px solid rgba(255,255,255,0.15);padding:14px 18px;border-radius:10px;font-weight:600;cursor:pointer">Überspringen</button>
+    </div>
+  </div>
+</div>
+
+<script>
+(function() {
+  var STORAGE_KEY = 'gpxtracker_settings_v2';
+  var FIRSTRUN_KEY = 'gpxtracker_firstrun_done';
+
+  function showFirstRun() {
+    var modal = document.getElementById('firstRunModal');
+    if (!modal) return;
+    modal.style.display = 'flex';
+    // Vorschlagswerte: aktuelles Jahr
+    var y = new Date().getFullYear();
+    document.getElementById('frStart').value    = y + '-06-29';
+    document.getElementById('frEnd').value      = y + '-07-19';
+    document.getElementById('frNachtrag').value = y + '-07-26';
+    document.getElementById('frMinDist').value  = '2';
+  }
+
+  window.applyFirstRun = function() {
+    var start    = document.getElementById('frStart').value;
+    var end      = document.getElementById('frEnd').value;
+    var nachtrag = document.getElementById('frNachtrag').value;
+    var minDist  = document.getElementById('frMinDist').value;
+    if (!start || !end) { alert('Bitte Startdatum und Enddatum eingeben.'); return; }
+    // In Hauptformular übertragen
+    var setVal = function(id, v) { var el = document.getElementById(id); if (el) { el.value = v; el.dispatchEvent(new Event('change')); } };
+    setVal('stadtradelnStart', start);
+    setVal('stadtradelnEnd',   end);
+    setVal('nachtragEnd',      nachtrag);
+    setVal('minDistanceKm',    minDist);
+    // Auch minDistance falls andere ID
+    setVal('minDistance', minDist);
+    // updateStadtradelnPeriod aufrufen
+    if (typeof updateStadtradelnPeriod === 'function') updateStadtradelnPeriod();
+    // Als erledigt markieren
+    try { localStorage.setItem(FIRSTRUN_KEY, '1'); } catch(e) {}
+    // Einstellungen sofort speichern
+    if (typeof saveSettingsToStorage === 'function') saveSettingsToStorage();
+    closeFirstRun();
+  };
+
+  window.closeFirstRun = function() {
+    var modal = document.getElementById('firstRunModal');
+    if (modal) modal.style.display = 'none';
+    try { localStorage.setItem(FIRSTRUN_KEY, '1'); } catch(e) {}
+  };
+
+  function init() {
+    var done    = false;
+    var hasSettings = false;
+    try { done = !!localStorage.getItem(FIRSTRUN_KEY); } catch(e) {}
+    try { hasSettings = !!localStorage.getItem(STORAGE_KEY); } catch(e) {}
+    if (!done && !hasSettings) {
+      setTimeout(showFirstRun, 600);
+    }
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', init);
+  } else {
+    init();
+  }
+})();
+</script>
+<!-- ===== ENDE FIRST-RUN MODAL ===== -->
+
 </body>
 
 
@@ -5347,6 +5446,105 @@ if (document.readyState !== 'loading') {
 }
 // ===== ENDE PERSISTENCE =====
 </script>
+
+<!-- ===== V27.2 FIRST-RUN MODAL ===== -->
+<div id="firstRunModal" style="display:none;position:fixed;inset:0;background:rgba(14,59,74,0.88);z-index:99999;align-items:center;justify-content:center;padding:16px">
+  <div style="background:#15425a;border:2px solid #c1ff00;border-radius:18px;max-width:520px;width:100%;padding:32px;box-shadow:0 20px 60px rgba(0,0,0,0.35)">
+    <div style="text-align:center;margin-bottom:24px">
+      <div style="font-size:3rem;margin-bottom:12px">🚴‍♂️</div>
+      <h2 style="margin:0 0 8px;color:#c1ff00;font-size:1.5rem">Willkommen beim GPS Tracker!</h2>
+      <p style="margin:0;color:#b8cbd6;font-size:0.95rem">Damit das Tool korrekt funktioniert, trage bitte zuerst deinen <strong style="color:#fff">Stadtradeln-Zeitraum</strong> ein.</p>
+    </div>
+    <div style="display:grid;gap:14px;margin-bottom:24px">
+      <div style="background:#0e3b4a;border-radius:10px;padding:14px;border:1px solid #1e4a5f">
+        <label style="display:block;color:#c1ff00;font-size:0.88rem;font-weight:700;margin-bottom:6px">Stadtradeln Startdatum</label>
+        <input type="date" id="frStart" style="width:100%;padding:10px 12px;background:#15425a;border:1px solid #1e4a5f;color:#fff;border-radius:8px;font-size:1rem">
+      </div>
+      <div style="background:#0e3b4a;border-radius:10px;padding:14px;border:1px solid #1e4a5f">
+        <label style="display:block;color:#c1ff00;font-size:0.88rem;font-weight:700;margin-bottom:6px">Stadtradeln Enddatum</label>
+        <input type="date" id="frEnd" style="width:100%;padding:10px 12px;background:#15425a;border:1px solid #1e4a5f;color:#fff;border-radius:8px;font-size:1rem">
+      </div>
+      <div style="background:#0e3b4a;border-radius:10px;padding:14px;border:1px solid #1e4a5f">
+        <label style="display:block;color:#c1ff00;font-size:0.88rem;font-weight:700;margin-bottom:6px">Nachtrag-Ende <span style="color:#b8cbd6;font-weight:400">(optional, Standard: +7 Tage)</span></label>
+        <input type="date" id="frNachtrag" style="width:100%;padding:10px 12px;background:#15425a;border:1px solid #1e4a5f;color:#fff;border-radius:8px;font-size:1rem">
+      </div>
+      <div style="background:#0e3b4a;border-radius:10px;padding:14px;border:1px solid #1e4a5f">
+        <label style="display:block;color:#c1ff00;font-size:0.88rem;font-weight:700;margin-bottom:6px">Minimale Distanz (km)</label>
+        <input type="number" id="frMinDist" value="2" min="0" step="0.1" style="width:100%;padding:10px 12px;background:#15425a;border:1px solid #1e4a5f;color:#fff;border-radius:8px;font-size:1rem">
+      </div>
+    </div>
+    <div style="display:flex;gap:12px">
+      <button onclick="applyFirstRun()" style="flex:1;background:linear-gradient(135deg,#c1ff00,#a2e900);color:#0e3b4a;border:none;padding:14px;border-radius:10px;font-weight:800;font-size:1rem;cursor:pointer">Speichern & loslegen 🚴‍♂️</button>
+      <button onclick="closeFirstRun()" style="background:rgba(255,255,255,0.08);color:#b8cbd6;border:1px solid rgba(255,255,255,0.15);padding:14px 18px;border-radius:10px;font-weight:600;cursor:pointer">Überspringen</button>
+    </div>
+  </div>
+</div>
+
+<script>
+(function() {
+  var STORAGE_KEY = 'gpxtracker_settings_v2';
+  var FIRSTRUN_KEY = 'gpxtracker_firstrun_done';
+
+  function showFirstRun() {
+    var modal = document.getElementById('firstRunModal');
+    if (!modal) return;
+    modal.style.display = 'flex';
+    // Vorschlagswerte: aktuelles Jahr
+    var y = new Date().getFullYear();
+    document.getElementById('frStart').value    = y + '-06-29';
+    document.getElementById('frEnd').value      = y + '-07-19';
+    document.getElementById('frNachtrag').value = y + '-07-26';
+    document.getElementById('frMinDist').value  = '2';
+  }
+
+  window.applyFirstRun = function() {
+    var start    = document.getElementById('frStart').value;
+    var end      = document.getElementById('frEnd').value;
+    var nachtrag = document.getElementById('frNachtrag').value;
+    var minDist  = document.getElementById('frMinDist').value;
+    if (!start || !end) { alert('Bitte Startdatum und Enddatum eingeben.'); return; }
+    // In Hauptformular übertragen
+    var setVal = function(id, v) { var el = document.getElementById(id); if (el) { el.value = v; el.dispatchEvent(new Event('change')); } };
+    setVal('stadtradelnStart', start);
+    setVal('stadtradelnEnd',   end);
+    setVal('nachtragEnd',      nachtrag);
+    setVal('minDistanceKm',    minDist);
+    // Auch minDistance falls andere ID
+    setVal('minDistance', minDist);
+    // updateStadtradelnPeriod aufrufen
+    if (typeof updateStadtradelnPeriod === 'function') updateStadtradelnPeriod();
+    // Als erledigt markieren
+    try { localStorage.setItem(FIRSTRUN_KEY, '1'); } catch(e) {}
+    // Einstellungen sofort speichern
+    if (typeof saveSettingsToStorage === 'function') saveSettingsToStorage();
+    closeFirstRun();
+  };
+
+  window.closeFirstRun = function() {
+    var modal = document.getElementById('firstRunModal');
+    if (modal) modal.style.display = 'none';
+    try { localStorage.setItem(FIRSTRUN_KEY, '1'); } catch(e) {}
+  };
+
+  function init() {
+    var done    = false;
+    var hasSettings = false;
+    try { done = !!localStorage.getItem(FIRSTRUN_KEY); } catch(e) {}
+    try { hasSettings = !!localStorage.getItem(STORAGE_KEY); } catch(e) {}
+    if (!done && !hasSettings) {
+      setTimeout(showFirstRun, 600);
+    }
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', init);
+  } else {
+    init();
+  }
+})();
+</script>
+<!-- ===== ENDE FIRST-RUN MODAL ===== -->
+
 </body>
 </html>
 
