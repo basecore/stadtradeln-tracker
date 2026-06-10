@@ -1,0 +1,69 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120" width="120" height="120">
+  <defs>
+    <linearGradient id="bgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#0e3b4a"/>
+      <stop offset="100%" style="stop-color:#15425a"/>
+    </linearGradient>
+    <linearGradient id="bikeGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#c1ff00"/>
+      <stop offset="100%" style="stop-color:#a2e900"/>
+    </linearGradient>
+    <linearGradient id="trailGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" style="stop-color:#1ed6ff;stop-opacity:0.2"/>
+      <stop offset="100%" style="stop-color:#1ed6ff;stop-opacity:1"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Background circle -->
+  <circle cx="60" cy="60" r="58" fill="url(#bgGrad)" stroke="#1e4a5f" stroke-width="2"/>
+
+  <!-- GPS trail curve behind bike -->
+  <path d="M 18 72 Q 30 58 44 65 Q 52 68 58 60" 
+        stroke="url(#trailGrad)" stroke-width="2.5" fill="none" 
+        stroke-linecap="round" stroke-dasharray="4 3" opacity="0.85"/>
+
+  <!-- Rear wheel -->
+  <circle cx="42" cy="72" r="16" fill="none" stroke="#c1ff00" stroke-width="3"/>
+  <line x1="42" y1="56" x2="42" y2="88" stroke="#c1ff00" stroke-width="1.2" opacity="0.5"/>
+  <line x1="26" y1="72" x2="58" y2="72" stroke="#c1ff00" stroke-width="1.2" opacity="0.5"/>
+  <line x1="30.7" y1="61.7" x2="53.3" y2="82.3" stroke="#c1ff00" stroke-width="1.2" opacity="0.5"/>
+  <line x1="30.7" y1="82.3" x2="53.3" y2="61.7" stroke="#c1ff00" stroke-width="1.2" opacity="0.5"/>
+  <circle cx="42" cy="72" r="2.5" fill="#c1ff00"/>
+
+  <!-- Front wheel -->
+  <circle cx="80" cy="72" r="16" fill="none" stroke="#c1ff00" stroke-width="3"/>
+  <line x1="80" y1="56" x2="80" y2="88" stroke="#c1ff00" stroke-width="1.2" opacity="0.5"/>
+  <line x1="64" y1="72" x2="96" y2="72" stroke="#c1ff00" stroke-width="1.2" opacity="0.5"/>
+  <line x1="68.7" y1="61.7" x2="91.3" y2="82.3" stroke="#c1ff00" stroke-width="1.2" opacity="0.5"/>
+  <line x1="68.7" y1="82.3" x2="91.3" y2="61.7" stroke="#c1ff00" stroke-width="1.2" opacity="0.5"/>
+  <circle cx="80" cy="72" r="2.5" fill="#c1ff00"/>
+
+  <!-- Frame -->
+  <line x1="42" y1="72" x2="61" y2="60" stroke="#c1ff00" stroke-width="3" stroke-linecap="round"/>
+  <line x1="42" y1="72" x2="61" y2="52" stroke="#c1ff00" stroke-width="2.5" stroke-linecap="round"/>
+  <line x1="61" y1="52" x2="80" y2="72" stroke="#c1ff00" stroke-width="3" stroke-linecap="round"/>
+  <line x1="61" y1="52" x2="75" y2="52" stroke="#c1ff00" stroke-width="2.5" stroke-linecap="round"/>
+  <line x1="75" y1="52" x2="80" y2="72" stroke="#c1ff00" stroke-width="2.5" stroke-linecap="round"/>
+  <circle cx="61" cy="60" r="3" fill="#c1ff00"/>
+
+  <!-- Seat post & saddle -->
+  <line x1="61" y1="52" x2="58" y2="42" stroke="#c1ff00" stroke-width="2.5" stroke-linecap="round"/>
+  <line x1="53" y1="40" x2="63" y2="40" stroke="#c1ff00" stroke-width="3" stroke-linecap="round"/>
+
+  <!-- Handlebar -->
+  <line x1="75" y1="52" x2="78" y2="43" stroke="#c1ff00" stroke-width="2.5" stroke-linecap="round"/>
+  <line x1="75" y1="42" x2="82" y2="45" stroke="#c1ff00" stroke-width="3" stroke-linecap="round"/>
+
+  <!-- Cyclist body -->
+  <line x1="58" y1="40" x2="76" y2="46" stroke="#c1ff00" stroke-width="4" stroke-linecap="round"/>
+  <circle cx="57" cy="36" r="6" fill="#c1ff00"/>
+  <path d="M 53 34 Q 57 28 62 33" stroke="#0e3b4a" stroke-width="1.5" fill="none" stroke-linecap="round"/>
+
+  <!-- GPS pin (top right) -->
+  <circle cx="95" cy="25" r="9" fill="#1ed6ff" opacity="0.15"/>
+  <path d="M 95 18 C 91 18 88 21 88 24.5 C 88 29 95 34 95 34 C 95 34 102 29 102 24.5 C 102 21 99 18 95 18 Z" fill="#1ed6ff" opacity="0.9"/>
+  <circle cx="95" cy="24.5" r="2.5" fill="#0e3b4a"/>
+
+  <!-- Outer ring accent -->
+  <circle cx="60" cy="60" r="57" fill="none" stroke="#c1ff00" stroke-width="0.8" opacity="0.25"/>
+</svg>
