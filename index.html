@@ -3,10 +3,5350 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Mein km-Buch – GPS Tracker V27.2</title>
-    <meta name="description" content="GPS Tracker fuer Stadtradeln – Import, Analyse und Export von GPX, CSV, KML und JSON">
+    <title>Mein km-Buch – GPS Tracker</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+	<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: #0e3b4a;
+            color: #fff;
+            line-height: 1.5;
+            overflow-x: hidden;
+        }
+
+        /* Header Bar */
+        .header-bar {
+            background: #fff;
+            color: #0e3b4a;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 12px 24px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+        }
+
+        .header-bar .logo {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-weight: 700;
+            font-size: 1.2rem;
+            letter-spacing: 0.5px;
+        }
+
+        .header-bar .user-section {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            font-size: 0.9rem;
+        }
+
+        .user-avatar {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            background: #c1ff00;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.2rem;
+            color: #0e3b4a;
+            font-weight: 600;
+        }
+
+        /* Main Layout */
+        .main-layout {
+            display: grid;
+            grid-template-columns: 280px 1fr;
+            min-height: calc(100vh - 60px);
+        }
+
+        /* Sidebar */
+        .sidebar {
+            background: #15425a;
+            padding: 40px 0;
+            border-right: 1px solid #1e4a5f;
+        }
+
+        .sidebar-profile {
+            text-align: center;
+            padding: 0 24px 32px;
+            border-bottom: 1px solid #1e4a5f;
+            margin-bottom: 32px;
+        }
+
+        .profile-avatar {
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            background: #c1ff00;
+            margin: 0 auto 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2.2rem;
+            color: #0e3b4a;
+            font-weight: 600;
+        }
+
+        .profile-name {
+            font-size: 1.1rem;
+            font-weight: 600;
+            margin-bottom: 8px;
+        }
+
+        .sidebar-nav {
+            list-style: none;
+        }
+
+        .sidebar-nav li {
+            margin-bottom: 4px;
+        }
+
+        .sidebar-nav a {
+            display: block;
+            padding: 12px 24px;
+            color: #b8cbd6;
+            text-decoration: none;
+            font-weight: 500;
+            border-left: 4px solid transparent;
+            transition: all 0.2s ease;
+        }
+
+        .sidebar-nav a:hover,
+        .sidebar-nav a.active {
+            background: #0e3b4a;
+            border-left-color: #c1ff00;
+            color: #fff;
+        }
+
+        .sidebar-info {
+            background: #0e3b4a;
+            margin: 32px 24px 0;
+            padding: 16px;
+            border-radius: 8px;
+            font-size: 0.85rem;
+            color: #b8cbd6;
+            line-height: 1.4;
+        }
+
+        /* Main Content */
+        .main-content {
+            background: #0e3b4a;
+            padding: 40px;
+            overflow-y: auto;
+        }
+
+        .page-title {
+            font-size: 2.5rem;
+            font-weight: 700;
+            margin-bottom: 32px;
+            color: #fff;
+        }
+
+        /* Dashboard Grid - Single Column */
+        .dashboard-grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 40px;
+            margin-bottom: 40px;
+        }
+
+        /* Cards */
+        .card {
+            background: #15425a;
+            border-radius: 16px;
+            padding: 32px;
+            margin-bottom: 24px;
+            border: 1px solid #1e4a5f;
+        }
+
+        .card-title {
+            font-size: 1.3rem;
+            font-weight: 600;
+            color: #c1ff00;
+            margin-bottom: 24px;
+        }
+
+        /* Upload Section */
+        .upload-section {
+            text-align: center;
+            margin-bottom: 32px;
+        }
+
+        .file-input-wrapper {
+            display: inline-block;
+            margin: 8px;
+        }
+
+        .file-input {
+            display: none;
+        }
+
+        .file-input-label {
+            background: linear-gradient(135deg, #c1ff00, #a2e900);
+            color: #0e3b4a;
+            padding: 14px 28px;
+            border-radius: 25px;
+            cursor: pointer;
+            font-weight: 600;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            transition: all 0.3s ease;
+            border: none;
+        }
+
+        .file-input-label:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(193, 255, 0, 0.3);
+        }
+
+        /* Progress Bar */
+        .progress-bar {
+            width: 100%;
+            height: 6px;
+            background: #1e4a5f;
+            border-radius: 3px;
+            overflow: hidden;
+            margin: 20px 0;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #c1ff00, #1ed6ff);
+            width: 0%;
+            transition: width 0.5s ease;
+        }
+
+        /* Stadtradeln Configuration */
+        .stadtradeln-config {
+            background: #15425a;
+            border-radius: 16px;
+            padding: 24px;
+            margin-bottom: 24px;
+            border: 1px solid #1e4a5f;
+        }
+
+        .config-row {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 16px;
+            align-items: end;
+        }
+
+        .config-group {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .config-group label {
+            font-weight: 500;
+            color: #c1ff00;
+            font-size: 0.9rem;
+        }
+
+        .config-group input {
+            padding: 8px 12px;
+            border: 1px solid #1e4a5f;
+            border-radius: 6px;
+            background: #0e3b4a;
+            color: #fff;
+            font-size: 14px;
+        }
+
+        .config-group input:focus {
+            outline: none;
+            border-color: #c1ff00;
+        }
+
+        /* Stadtradeln Input Helper */
+        .stadtradeln-input-helper {
+            background: #15425a;
+            border-radius: 16px;
+            padding: 32px;
+            margin: 32px 0;
+            border: 1px solid #1e4a5f;
+        }
+
+        .input-helper-title {
+            color: #c1ff00;
+            font-size: 1.5rem;
+            font-weight: 600;
+            margin-bottom: 24px;
+            text-align: center;
+        }
+
+        .trip-input-card {
+            background: #0e3b4a;
+            border-radius: 12px;
+            padding: 24px;
+            margin-bottom: 16px;
+            border: 2px solid #1e4a5f;
+            transition: all 0.3s ease;
+        }
+
+        .trip-input-card.current {
+            border-color: #c1ff00;
+            box-shadow: 0 0 20px rgba(193, 255, 0, 0.2);
+        }
+
+        .trip-input-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .trip-number {
+            background: #c1ff00;
+            color: #0e3b4a;
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-weight: 600;
+            font-size: 0.9rem;
+        }
+
+        .trip-mode-badge {
+            padding: 6px 12px;
+            border-radius: 15px;
+            font-size: 0.8rem;
+            font-weight: 500;
+        }
+
+        .trip-mode-bike {
+            background: linear-gradient(135deg, #c1ff00, #a2e900);
+            color: #0e3b4a;
+        }
+
+        .trip-mode-walk {
+            background: linear-gradient(135deg, #1ed6ff, #0ea5e9);
+            color: #0e3b4a;
+        }
+
+        .trip-mode-car {
+            background: linear-gradient(135deg, #64748b, #475569);
+            color: #fff;
+        }
+
+        .trip-mode-train {
+            background: linear-gradient(135deg, #ff6b6b, #ee5a52);
+            color: #fff;
+        }
+
+        .input-fields-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 16px;
+            margin-bottom: 20px;
+        }
+
+        .input-field {
+            background: #15425a;
+            border-radius: 8px;
+            padding: 16px;
+            border: 1px solid #1e4a5f;
+        }
+
+        .input-label {
+            color: #c1ff00;
+            font-size: 0.9rem;
+            font-weight: 600;
+            margin-bottom: 8px;
+            display: block;
+        }
+
+        .input-value {
+            color: #fff;
+            font-size: 1.2rem;
+            font-weight: 600;
+            background: #0e3b4a;
+            padding: 12px;
+            border-radius: 6px;
+            border: 1px solid #1e4a5f;
+            width: 100%;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            user-select: all;
+        }
+
+        .input-value:hover {
+            background: #1e4a5f;
+            border-color: #c1ff00;
+        }
+
+        .route-description {
+            background: #15425a;
+            border-radius: 8px;
+            padding: 16px;
+            margin-top: 16px;
+            border: 1px solid #1e4a5f;
+        }
+
+        .route-text {
+            color: #b8cbd6;
+            font-style: italic;
+            line-height: 1.4;
+            background: #0e3b4a;
+            padding: 12px;
+            border-radius: 6px;
+            border: 1px solid #1e4a5f;
+            cursor: pointer;
+            user-select: all;
+            transition: all 0.3s ease;
+        }
+
+        .route-text:hover {
+            background: #1e4a5f;
+            border-color: #c1ff00;
+        }
+
+        .navigation-controls {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 24px;
+            padding-top: 20px;
+            border-top: 1px solid #1e4a5f;
+        }
+
+        .nav-btn {
+            background: linear-gradient(135deg, #1ed6ff, #0ea5e9);
+            color: #fff;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 0.9rem;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .nav-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(30, 214, 255, 0.3);
+        }
+
+        .nav-btn:disabled {
+            background: #64748b;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+
+        .trip-counter {
+            color: #c1ff00;
+            font-weight: 600;
+            font-size: 1.1rem;
+        }
+
+        .copy-notification {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: #10b981;
+            color: white;
+            padding: 12px 24px;
+            border-radius: 8px;
+            font-weight: 600;
+            z-index: 10000;
+            transform: translateX(100%);
+            transition: transform 0.3s ease;
+        }
+
+        .copy-notification.show {
+            transform: translateX(0);
+        }
+
+        /* Route Description Button */
+        .route-description-section {
+            background: #15425a;
+            border-radius: 12px;
+            padding: 20px;
+            margin: 20px 0;
+            border: 1px solid #1e4a5f;
+            text-align: center;
+        }
+
+        .route-btn {
+            background: linear-gradient(135deg, #1ed6ff, #0ea5e9);
+            color: #fff;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 0.9rem;
+            transition: all 0.3s ease;
+        }
+
+        .route-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(30, 214, 255, 0.3);
+        }
+
+        .route-btn:disabled {
+            background: #64748b;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        /* Stats */
+        .stats-overview {
+            margin-bottom: 24px;
+            font-size: 0.95rem;
+            line-height: 1.6;
+        }
+
+        .stats-overview strong {
+            color: #c1ff00;
+        }
+
+        .stats-period {
+            color: #b8cbd6;
+            font-size: 0.85rem;
+            margin-top: 8px;
+        }
+
+        /* Chart Container - Fixed Height */
+        .chart-container {
+            background: #0e3b4a;
+            border-radius: 12px;
+            padding: 24px;
+            margin: 24px 0;
+            height: 450px;
+        }
+
+        .chart-tabs {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 20px;
+        }
+
+        .chart-tab {
+            background: none;
+            border: none;
+            color: #c1ff00;
+            padding: 8px 16px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 500;
+            transition: background 0.2s;
+        }
+
+        .chart-tab.active {
+            background: #15425a;
+            color: #fff;
+        }
+
+        .chart-legend {
+            display: flex;
+            gap: 12px;
+            margin-top: 20px;
+            font-size: 0.8rem;
+            flex-wrap: wrap;
+            justify-content: center;
+            min-height: 60px;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            margin-bottom: 8px;
+        }
+
+        .legend-dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 6px;
+            flex-shrink: 0;
+        }
+
+        .chart-wrapper {
+            height: 280px;
+            width: 100%;
+            position: relative;
+        }
+
+        /* Buttons */
+        .btn-row {
+            display: flex;
+            gap: 12px;
+            margin: 24px 0;
+        }
+
+        .btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 0.9rem;
+            transition: all 0.3s ease;
+        }
+
+        .btn-primary {
+            background: #c1ff00;
+            color: #0e3b4a;
+        }
+
+        .btn-secondary {
+            background: #1ed6ff;
+            color: #0e3b4a;
+        }
+
+        .btn:hover {
+            transform: translateY(-1px);
+        }
+
+        /* Stats Grid */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 16px;
+            margin-bottom: 24px;
+        }
+
+        .stat-card {
+            background: #0e3b4a;
+            padding: 20px;
+            border-radius: 12px;
+            text-align: center;
+        }
+
+        .stat-value {
+            font-size: 2rem;
+            font-weight: 700;
+            color: #c1ff00;
+            margin-bottom: 4px;
+        }
+
+        .stat-label {
+            color: #b8cbd6;
+            font-size: 0.8rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        /* Table */
+        .data-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 24px;
+        }
+
+        .data-table th,
+        .data-table td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid #1e4a5f;
+        }
+
+        .data-table th {
+            color: #c1ff00;
+            font-weight: 600;
+            font-size: 0.9rem;
+        }
+
+        .data-table td {
+            color: #e0f2f1;
+            font-size: 0.9rem;
+        }
+
+        /* Trip Cards */
+        .trip-card {
+            background: #15425a;
+            border-radius: 12px;
+            margin-bottom: 16px;
+            overflow: hidden;
+            border: 1px solid #1e4a5f;
+            transition: all 0.3s ease;
+        }
+
+        .trip-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(0,0,0,0.2);
+        }
+
+        .trip-header {
+            padding: 20px;
+            cursor: pointer;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 20px;
+        }
+
+        .trip-biking .trip-header {
+            background: linear-gradient(135deg, #c1ff00, #a2e900);
+            color: #0e3b4a;
+        }
+
+        .trip-walking .trip-header {
+            background: linear-gradient(135deg, #1ed6ff, #0ea5e9);
+            color: #0e3b4a;
+        }
+
+        .trip-vehicle .trip-header {
+            background: linear-gradient(135deg, #64748b, #475569);
+            color: #fff;
+        }
+
+        .trip-train .trip-header {
+            background: linear-gradient(135deg, #ff6b6b, #ee5a52);
+            color: #fff;
+        }
+
+        .trip-info {
+            flex-grow: 1;
+        }
+
+        .trip-title {
+            font-size: 1.2rem;
+            font-weight: 600;
+            margin-bottom: 4px;
+        }
+
+        .trip-details {
+            opacity: 0.8;
+            font-size: 0.9rem;
+        }
+
+        .trip-stats {
+            display: flex;
+            gap: 16px;
+            font-weight: 500;
+            font-size: 0.85rem;
+        }
+
+        .trip-controls {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+        }
+
+        .mode-selector {
+            padding: 6px 12px;
+            border: 1px solid rgba(255,255,255,0.2);
+            border-radius: 6px;
+            background: rgba(255,255,255,0.1);
+            color: inherit;
+            font-size: 0.8rem;
+            cursor: pointer;
+        }
+
+        .save-btn {
+            background: #10b981;
+            color: #fff;
+            border: none;
+            padding: 6px 12px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.8rem;
+            font-weight: 500;
+        }
+
+        .trip-comment {
+            padding: 16px 20px;
+            background: #0e3b4a;
+            border-top: 1px solid #1e4a5f;
+            font-style: italic;
+            color: #b8cbd6;
+        }
+
+        .route-loading {
+            color: #1ed6ff;
+            font-style: italic;
+        }
+
+        /* Export Section */
+        .export-section {
+            background: #15425a;
+            border-radius: 16px;
+            padding: 32px;
+            margin-top: 32px;
+        }
+
+        .export-btn {
+            background: #c1ff00;
+            color: #0e3b4a;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            margin: 8px;
+            transition: all 0.3s ease;
+        }
+
+        .export-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(193, 255, 0, 0.3);
+        }
+
+        .stadtradeln-export {
+            background: #0e3b4a;
+            border: 1px solid #1e4a5f;
+            border-radius: 8px;
+            padding: 20px;
+            margin-top: 20px;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+
+        .stadtradeln-entry {
+            background: #15425a;
+            border: 1px solid #1e4a5f;
+            border-radius: 6px;
+            padding: 15px;
+            margin-bottom: 10px;
+            font-family: monospace;
+            font-size: 14px;
+            color: #fff;
+        }
+
+        .copy-btn {
+            background: #1ed6ff;
+            color: #0e3b4a;
+            border: none;
+            padding: 5px 10px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 12px;
+            margin-top: 10px;
+            font-weight: 500;
+        }
+
+        .modified-indicator {
+            background: #fbbf24;
+            color: #0e3b4a;
+            padding: 2px 8px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: 500;
+            margin-left: 10px;
+        }
+
+        /* Map */
+        .map-container {
+            height: 400px;
+            border-radius: 12px;
+            overflow: hidden;
+            margin: 20px 0;
+            border: 1px solid #1e4a5f;
+        }
+
+        /* Filter Section */
+        .filter-section {
+            background: #15425a;
+            border-radius: 16px;
+            padding: 24px;
+            margin-bottom: 24px;
+            border: 1px solid #1e4a5f;
+        }
+
+        .filter-row {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 16px;
+            align-items: end;
+        }
+
+        .filter-group {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .filter-group label {
+            font-weight: 500;
+            color: #c1ff00;
+            font-size: 0.9rem;
+        }
+
+        .filter-group input {
+            padding: 8px 12px;
+            border: 1px solid #1e4a5f;
+            border-radius: 6px;
+            background: #0e3b4a;
+            color: #fff;
+            font-size: 14px;
+        }
+
+        .filter-group input:focus {
+            outline: none;
+            border-color: #c1ff00;
+			
+        }
+
+        /* Outlier Stats */
+        .outlier-stats {
+            background: #15425a;
+            border: 1px solid #1e4a5f;
+            border-radius: 16px;
+            padding: 24px;
+            margin-bottom: 24px;
+        }
+
+        /* Route Description Status */
+        .route-status {
+            background: #15425a;
+            border: 1px solid #1e4a5f;
+            border-radius: 8px;
+            padding: 16px;
+            margin: 20px 0;
+            text-align: center;
+            color: #c1ff00;
+        }
+
+        .route-progress-bar {
+            background: #0e3b4a;
+            border-radius: 4px;
+            height: 8px;
+            overflow: hidden;
+            margin: 10px 0;
+        }
+
+        .route-progress-fill {
+            background: #c1ff00;
+            height: 100%;
+            width: 0%;
+            transition: width 0.3s ease;
+        }
+
+        /* Responsive */
+        @media (max-width: 1024px) {
+            .main-layout {
+                grid-template-columns: 1fr;
+            }
+            
+            .sidebar {
+                display: none;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .main-content {
+                padding: 20px;
+            }
+            
+            .page-title {
+                font-size: 2rem;
+            }
+            
+            .trip-header {
+                flex-direction: column;
+                align-items: stretch;
+                gap: 12px;
+            }
+            
+            .trip-stats {
+                justify-content: space-between;
+            }
+            
+            .input-fields-grid {
+                grid-template-columns: 1fr;
+            }
+
+            /* MOBILE OPTIMIERUNGEN FÜR STADTRADELN INPUT HELPER */
+            .stadtradeln-input-helper {
+                padding: 16px;
+                margin: 16px 0;
+            }
+
+            .input-helper-title {
+                font-size: 1.2rem;
+                margin-bottom: 16px;
+            }
+
+            .trip-input-card {
+                padding: 16px;
+                margin-bottom: 12px;
+            }
+
+            .trip-input-header {
+                margin-bottom: 12px;
+            }
+
+            .trip-number {
+                padding: 6px 12px;
+                font-size: 0.8rem;
+            }
+
+            .trip-mode-badge {
+                padding: 4px 8px;
+                font-size: 0.7rem;
+            }
+
+            .input-fields-grid {
+                gap: 12px;
+                margin-bottom: 12px;
+            }
+
+            .input-field {
+                padding: 12px;
+            }
+
+            .input-label {
+                font-size: 0.8rem;
+                margin-bottom: 6px;
+            }
+
+            .input-value {
+                font-size: 1rem;
+                padding: 10px;
+            }
+
+            .route-description {
+                padding: 12px;
+                margin-top: 12px;
+            }
+
+            .route-text {
+                padding: 10px;
+                font-size: 0.9rem;
+            }
+
+            .navigation-controls {
+                margin-top: 16px;
+                padding-top: 12px;
+            }
+
+            .nav-btn {
+                padding: 10px 16px;
+                font-size: 0.8rem;
+            }
+
+            .trip-counter {
+                font-size: 1rem;
+            }
+
+            /* CHART LEGEND MOBILE OPTIMIERUNG */
+            .chart-container {
+                height: 400px;
+                padding: 16px;
+            }
+
+            .chart-wrapper {
+                height: 240px;
+            }
+
+            .chart-legend {
+                gap: 8px;
+                font-size: 0.75rem;
+                min-height: 80px;
+                margin-top: 16px;
+            }
+
+            .legend-item {
+                margin-bottom: 6px;
+                min-width: calc(50% - 4px);
+            }
+
+            .legend-dot {
+                width: 10px;
+                height: 10px;
+                border-radius: 5px;
+            }
+        }
+
+        /* EXTRA KLEINE BILDSCHIRME */
+        @media (max-width: 480px) {
+            .stadtradeln-input-helper {
+                padding: 12px;
+            }
+
+            .input-helper-title {
+                font-size: 1.1rem;
+                margin-bottom: 12px;
+            }
+
+            .trip-input-card {
+                padding: 12px;
+            }
+
+            .input-fields-grid {
+                grid-template-columns: 1fr;
+                gap: 8px;
+            }
+
+            .nav-btn {
+                padding: 8px 12px;
+                font-size: 0.75rem;
+            }
+
+            /* Chart für sehr kleine Bildschirme */
+            .chart-container {
+                height: 350px;
+                padding: 12px;
+            }
+
+            .chart-wrapper {
+                height: 200px;
+            }
+
+            .chart-legend {
+                font-size: 0.7rem;
+                gap: 6px;
+            }
+
+            .legend-item {
+                min-width: 100%;
+            }
+        }
+		/* --- MOBILE TABBAR NUR AUF KLEINEN BILDSCHIRMEN --- */
+		.mobile-tabbar {
+			display: none;
+			position: fixed;
+			left: 0;
+			bottom: 0;
+			width: 100vw;
+			background: #15425a;
+			border-top: 2.5px solid #1e4a5f;
+			z-index: 2000;
+			height: 64px;
+			justify-content: space-around;
+			align-items: center;
+			box-shadow: 0 -2px 12px rgba(0,0,0,0.08);
+		}
+		.mobile-tabbar a {
+			flex: 1;
+			text-align: center;
+			color: #b8cbd6;
+			text-decoration: none;
+			font-size: 0.98em;
+			padding: 7px 0 2px 0;
+			border-top: 3.5px solid transparent;
+			transition: background 0.18s, color 0.18s, border-top 0.18s;
+			background: none;
+			display: flex;
+			flex-direction: column;
+			align-items: center;
+			justify-content: center;
+			font-weight: 600;
+			letter-spacing: 0.01em;
+			height: 100%;
+		}
+		.mobile-tabbar a.active,
+		.mobile-tabbar a:active {
+			color: #fff;
+			border-top: 3.5px solid #c1ff00;
+			background: #0e3b4a;
+		}
+
+		/* --- RESPONSIVE: NUR AUF KLEINEN BILDSCHIRMEN --- */
+		@media (max-width: 1024px) {
+			.sidebar {
+				display: none;
+			}
+			.mobile-tabbar {
+				display: flex;
+			}
+			.main-layout {
+				grid-template-columns: 1fr;
+			}
+			.main-content {
+				padding-bottom: 80px; /* Platz für Tabbar lassen */
+			}
+		}
+
+		/* --- WEITERE MOBILE OPTIMIERUNGEN --- */
+		@media (max-width: 768px) {
+			.main-content {
+				padding: 20px 4px 80px 4px;
+			}
+			.page-title {
+				font-size: 2rem;
+			}
+			.card, .stadtradeln-config, .stadtradeln-input-helper, .outlier-stats {
+				padding: 14px;
+			}
+			.stats-grid {
+				grid-template-columns: 1fr;
+			}
+		}
+
+		@media (max-width: 480px) {
+			.main-content {
+				padding: 8px 2px 80px 2px;
+			}
+			.page-title {
+				font-size: 1.1rem;
+			}
+			.btn, .btn-primary, .btn-secondary {
+				padding: 8px 12px;
+				font-size: 0.95em;
+			}
+			.mobile-tabbar {
+				height: 56px;
+			}
+			.mobile-tabbar a {
+				font-size: 0.92em;
+				padding: 5px 0 1px 0;
+			}
+		}
+
+		/* --- OPTIONAL: Sidebar-Icons auch auf Desktop --- */
+		.sidebar-nav a {
+			display: flex;
+			align-items: center;
+			gap: 8px;
+		}
+		.mobile-tabbar a {
+			display: flex;
+			flex-direction: column;
+			align-items: center;
+			justify-content: center;
+			font-weight: 600;
+			letter-spacing: 0.01em;
+			height: 100%;
+			padding: 0;
+			min-width: 0;
+		}
+
+		.mobile-tabbar a .emoji {
+			font-size: 1.5em;
+			display: block;
+			margin-bottom: 2px; /* Abstand nach unten, ggf. anpassen */
+			line-height: 1;
+			vertical-align: middle;
+		}
+
+		.mobile-tabbar a .text {
+			font-size: 0.92em;
+			line-height: 1.2;
+			margin: 0;
+			padding: 0;
+			display: block;
+		}
+		.delete-btn {
+			background: #ef4444;
+			color: #fff;
+			border: none;
+			padding: 6px 12px;
+			border-radius: 6px;
+			cursor: pointer;
+			font-size: 0.8rem;
+			font-weight: 500;
+			margin-left: 4px;
+			transition: all 0.3s ease;
+		}
+
+		.delete-btn:hover {
+			background: #dc2626;
+			transform: translateY(-1px);
+		}
+
+		.delete-btn:active {
+			transform: translateY(0);
+		}
+		/* Eingeklappte Bereiche */
+		.collapsible-section {
+			background: #15425a;
+			border-radius: 16px;
+			margin-bottom: 24px;
+			border: 1px solid #1e4a5f;
+			overflow: hidden;
+		}
+
+		.collapsible-header {
+			background: #0e3b4a;
+			padding: 16px 24px;
+			cursor: pointer;
+			display: flex;
+			justify-content: space-between;
+			align-items: center;
+			border-bottom: 1px solid #1e4a5f;
+			transition: background 0.3s ease;
+		}
+
+		.collapsible-header:hover {
+			background: #1e4a5f;
+		}
+
+		.collapsible-title {
+			font-size: 1.3rem;
+			font-weight: 600;
+			color: #c1ff00;
+			display: flex;
+			align-items: center;
+			gap: 12px;
+		}
+
+		.collapsible-toggle {
+			font-size: 1.5rem;
+			color: #c1ff00;
+			transform: rotate(0deg);
+			transition: transform 0.3s ease;
+		}
+
+		.collapsible-toggle.expanded {
+			transform: rotate(90deg);
+		}
+
+		.collapsible-content {
+			padding: 0 24px;
+			max-height: 0;
+			overflow: hidden;
+			transition: all 0.3s ease;
+		}
+
+		.collapsible-content.expanded {
+			max-height: none;
+			padding: 24px;
+		}
+
+		.collapsible-summary {
+			color: #b8cbd6;
+			font-size: 0.9rem;
+			margin-left: 8px;
+		}
+		.transport-mode-buttons {
+			display: flex;
+			gap: 12px;
+			margin: 16px 0;
+			flex-wrap: wrap;
+			justify-content: center;
+		}
+
+		.transport-btn {
+			background: linear-gradient(135deg, #1ed6ff, #0ea5e9);
+			color: #fff;
+			border: none;
+			padding: 12px 20px;
+			border-radius: 8px;
+			cursor: pointer;
+			font-weight: 600;
+			font-size: 0.9rem;
+			transition: all 0.3s ease;
+			display: flex;
+			align-items: center;
+			gap: 8px;
+			min-width: 120px;
+			justify-content: center;
+		}
+
+		.transport-btn:hover {
+			transform: translateY(-2px);
+			box-shadow: 0 8px 20px rgba(30, 214, 255, 0.3);
+		}
+
+		.transport-btn.selected {
+			background: linear-gradient(135deg, #c1ff00, #a2e900);
+			color: #0e3b4a;
+			transform: translateY(-2px);
+			box-shadow: 0 8px 20px rgba(193, 255, 0, 0.3);
+		}
+
+		/* Spezifische Farben für jeden Button */
+		.bike-btn.selected {
+			background: linear-gradient(135deg, #c1ff00, #a2e900);
+			color: #0e3b4a;
+		}
+
+		.walk-btn.selected {
+			background: linear-gradient(135deg, #1ed6ff, #0ea5e9);
+			color: #fff;
+		}
+
+		.car-btn.selected {
+			background: linear-gradient(135deg, #64748b, #475569);
+			color: #fff;
+		}
+
+		.train-btn.selected {
+			background: linear-gradient(135deg, #ff6b6b, #ee5a52);
+			color: #fff;
+		}
+
+
+
+    </style>
 </head>
 <body>
-<p>Bitte die vollstaendige index.html via GitHub Actions oder direkten Commit hochladen.</p>
+    <!-- Header Bar -->
+    <div class="header-bar">
+        <div class="logo">
+            🚴‍♂️ GPS Tracker
+        </div>
+        <div class="user-section">
+            <div class="user-avatar">😊</div>
+            <span>GPS Tracker</span>
+        </div>
+    </div>
+
+    <div class="main-layout">
+        <!-- Sidebar -->
+        <div class="sidebar">
+            <div class="sidebar-profile">
+                <div class="profile-avatar">😊</div>
+                <div class="profile-name">GPS Tracker</div>
+            </div>
+            
+            <nav>
+                <ul class="sidebar-nav">
+                    <li><a href="#" class="active" id="tabDashboard">🏠 Dashboard</a></li>
+                    <li><a href="#" id="tabOptions">⚙️ Optionen</a></li>
+                    <li><a href="#" id="tabAbout">ℹ️ About Me</a></li>
+                </ul>
+            </nav>
+            
+            <div class="sidebar-info">
+                <strong>GPS Tracker Tool</strong><br>
+                Dieses Tool vereinfacht die Erstellung von Stadtradeln-Einträgen aus GPX-, CSV- oder KML-Dateien. Lade deine GPS-Daten hoch und das Tool analysiert automatisch deine Fahrten und erstellt die passenden Einträge für das Stadtradeln.
+            </div>
+        </div>
+        
+        <!-- Mobile Tabbar -->
+        <div class="mobile-tabbar" id="mobileTabbar">
+            <a href="#" id="mobileTabDashboard" class="active">
+                <span class="emoji">🏠</span>
+                <span class="text">Dashboard</span>
+            </a>
+            <a href="#" id="mobileTabOptions">
+                <span class="emoji">⚙️</span>
+                <span class="text">Optionen</span>
+            </a>
+            <a href="#" id="mobileTabAbout">
+                <span class="emoji">ℹ️</span>
+                <span class="text">About</span>
+            </a>
+        </div>
+
+        <!-- Main Content -->
+        <div class="main-content">
+
+            <!-- 1. Export/Import Buttons - IMMER als erstes sichtbar -->
+            <div class="export-import-top" style="margin-bottom:22px;">
+                <button class="export-btn" onclick="saveData()" style="background:#c1ff00; color:#0e3b4a; font-weight:600; font-size:1.07em;">
+                    💾 Daten speichern
+                </button>
+                <button class="export-btn" onclick="loadData()" style="background:#0ea5e9; color:#fff; font-weight:600; font-size:1.07em;">
+                    📂 Daten laden
+                </button>
+                <input type="file" id="loadDataFile" style="display:none;" accept=".json" />
+            </div>
+
+            <h1 class="page-title" id="pageTitle">Mein km-Buch</h1>
+
+            <!-- 2. Upload-Bereich - Dateneingabe -->
+            <div class="upload-section" id="uploadSection">
+                <div class="file-input-wrapper">
+                    <input type="file" id="gpxFile" class="file-input" accept=".gpx" multiple />
+                    <label for="gpxFile" class="file-input-label">📍 GPX Upload</label>
+                </div>
+                <label style="display:block; margin:10px 0 0 4px; font-size:0.98em;">
+                    <input type="checkbox" id="coarseGPXMode" style="margin-right:5px; vertical-align: middle;" />
+                    🛠️ GPX ist grob/ungenau (z. B. aus Routenplaner) – Filter automatisch anpassen
+                </label>
+                <div class="file-input-wrapper">
+                    <input type="file" id="csvFile" class="file-input" accept=".csv" multiple />
+                    <label for="csvFile" class="file-input-label">📊 CSV Upload</label>
+                </div>
+                <div class="file-input-wrapper">
+                    <input type="file" id="kmlFile" class="file-input" accept=".kml,.kmz" multiple />
+                    <label for="kmlFile" class="file-input-label">🗺️ KML/KMZ Upload</label>
+                </div>
+                <div class="file-input-wrapper">
+                    <input type="file" id="jsonFile" class="file-input" accept=".json" multiple />
+                    <label for="jsonFile" class="file-input-label" id="jsonUploadBtn">🗂️ JSON Upload (Google Maps)</label>
+                </div>
+                <div class="progress-bar">
+                    <div class="progress-fill" id="progressFill"></div>
+                </div>
+            </div>
+
+            <!-- 3. Stadtradeln-Konfiguration & Filter - Grundkonfiguration -->
+            <div class="stadtradeln-config" id="stadtradelnConfig">
+                <h3 class="card-title">⚙️ Stadtradeln-Zeitraum konfigurieren & Filtern</h3>
+                <div class="config-row">
+                    <div class="config-group">
+                        <label for="stadtradelnStart">Stadtradeln Startdatum:</label>
+                        <input type="date" id="stadtradelnStart" value="2025-06-29" onchange="updateStadtradelnPeriod()" />
+                    </div>
+                    <div class="config-group">
+                        <label for="stadtradelnEnd">Stadtradeln Enddatum:</label>
+                        <input type="date" id="stadtradelnEnd" value="2025-07-19" onchange="updateStadtradelnPeriod()" />
+                    </div>
+                    <div class="config-group">
+                        <label for="nachtragEnd">Nachtragezeitraum Ende:</label>
+                        <input type="date" id="nachtragEnd" value="2025-07-26" onchange="updateStadtradelnPeriod()" />
+                    </div>
+                    <div class="config-group">
+                        <label for="minDistance">Min. Distanz (km):</label>
+                        <input type="number" id="minDistanceKm" value="2" min="0" step="0.1" onchange="applyFilters()" />
+                    </div>
+                    <div class="config-group">
+                        <label for="maxSpeed">Max. Geschwindigkeit (km/h):</label>
+                        <input type="number" id="maxSpeed" value="40" min="1" step="1" onchange="applyFilters()" />
+                    </div>
+                    <div class="config-group">
+                        <button onclick="applyFilters()" class="btn btn-primary">Filter anwenden</button>
+                    </div>
+                </div>
+                <div id="importedDataInfo" style="display: none; margin-top: 16px; padding: 12px; background: #0e3b4a; border-radius: 8px; border: 1px solid #1e4a5f;">
+                    <h4 style="color: #c1ff00; margin-bottom: 8px;">📊 Importierte GPS-Daten</h4>
+                    <div style="color: #b8cbd6; font-size: 0.9rem;">
+                        <span id="totalImportedTrips">0</span> 
+                        <span id="importedDateRange">--</span><br>
+                        <span id="filteredTripsCount">0</span> Fahrten im konfigurierten Zeitraum
+                    </div>
+                </div>
+            </div>
+
+            <!-- 4. GPS-Datenqualität - Datenvalidierung -->
+            <div class="outlier-stats" id="outlierStats" style="display: none;">
+                <h3 class="card-title">📊 GPS-Datenqualität</h3>
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div class="stat-value" id="totalPoints">0</div>
+                        <div class="stat-label">GPS-Punkte</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value" id="filteredPoints">0</div>
+                        <div class="stat-label">Gefilterte Ausreißer</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value" id="dataQuality">0%</div>
+                        <div class="stat-label">Datenqualität</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value" id="maxJump">0 km</div>
+                        <div class="stat-label">Größter Sprung</div>
+                    </div>
+                </div>
+            </div>
+
+			<!-- 5. Dashboard Grid - Statistische Übersicht -->
+			<button onclick="resetSettingsToDefault()" style="background:#ef4444;color:#fff;border:none;padding:10px 22px;border-radius:8px;cursor:pointer;font-weight:600;font-size:0.95em;margin-top:12px;transition:all 0.2s ease" onmouseover="this.style.background='#dc2626'" onmouseout="this.style.background='#ef4444'">&#x21BA; Einstellungen zurücksetzen</button>
+<div class="collapsible-section" id="dashboardSection" style="display: none;">
+				<div class="collapsible-header" onclick="toggleSection('dashboardGrid')">
+					<div class="collapsible-title">
+						📊 Auswertung 2025
+						<span class="collapsible-summary" id="dashboardSummary">0 km, 0 Fahrten</span>
+					</div>
+					<span class="collapsible-toggle" id="dashboardToggle">▶</span>
+				</div>
+				<div class="collapsible-content" id="dashboardGrid">
+					<div>
+						<!-- Main Stats Card -->
+						<div class="card">
+							<div class="stats-overview">
+								<strong>Auswertung 2025</strong><br>
+								geradelte km: <span id="totalBikeKm">0</span><br>
+								Fahrten gesamt: <span id="totalBikeTrips">0</span>
+								<div class="stats-period" id="statsPeriod">
+									Zeitraum: 29.06. - 19.07.2025<br>
+									Nachtragezeitraum: 20.07. - 26.07.2025
+								</div>
+							</div>
+							
+							<div class="chart-tabs">
+								<button class="chart-tab active" id="tabCurrent" onclick="showCurrentPeriod()">Aktueller Zeitraum</button>
+							</div>
+							
+							<div class="chart-container">
+								<div class="chart-wrapper">
+									<canvas id="kmChart"></canvas>
+								</div>
+								<div class="chart-legend" id="chartLegend">
+									<div class="legend-item">
+										<div class="legend-dot" style="background: #c1ff00;"></div>
+										<span id="week1Label">1. Woche (29.06-05.07)</span>
+									</div>
+									<div class="legend-item">
+										<div class="legend-dot" style="background: #1ed6ff;"></div>
+										<span id="week2Label">2. Woche (06.07-12.07)</span>
+									</div>
+									<div class="legend-item">
+										<div class="legend-dot" style="background: #a2e900;"></div>
+										<span id="week3Label">3. Woche (13.07-19.07)</span>
+									</div>
+								</div>
+							</div>
+						</div>
+						
+						<!-- Data Table -->
+						<table class="data-table">
+							<thead>
+								<tr>
+									<th>Zeitraum</th>
+									<th>geradelte km</th>
+									<th>kg CO₂</th>
+								</tr>
+							</thead>
+							<tbody id="dataTableBody">
+								<!-- Dynamically filled -->
+							</tbody>
+						</table>
+
+						<!-- Overview Stats -->
+						<div class="card">
+							<h3 class="card-title">Meine Daten im Überblick</h3>
+							<div class="stats-grid">
+								<div class="stat-card">
+									<div class="stat-value" id="avgKmPerDay">0</div>
+									<div class="stat-label">Ø km pro Tag</div>
+								</div>
+								<div class="stat-card">
+									<div class="stat-value" id="totalKm">0</div>
+									<div class="stat-label">Gefahrene Kilometer</div>
+								</div>
+								<div class="stat-card">
+									<div class="stat-value" id="totalTrips">0</div>
+									<div class="stat-label">Fahrten gesamt</div>
+								</div>
+								<div class="stat-card">
+									<div class="stat-value" id="co2Saved">0</div>
+									<div class="stat-label">kg CO₂ Vermeidung</div>
+								</div>
+							</div>
+						</div>
+					</div>
+				</div>
+			</div>
+
+            <!-- 6. Routenbeschreibungen - Datenanreicherung -->
+            <div class="route-description-section" id="routeDescriptionSection" style="display: none;">
+                <h3 style="color: #c1ff00; margin-bottom: 16px;">🗺️ Routenbeschreibungen</h3>
+                <p style="margin-bottom: 16px; color: #b8cbd6;">
+                    Möchtest du automatische Routenbeschreibungen für deine Fahrten erstellen lassen? 
+                    Dies kann einige Minuten dauern, da die Adressen über das Internet abgerufen werden.
+                </p>
+                <button class="route-btn" id="startRouteDescriptionBtn" onclick="startRouteDescriptionGeneration()">
+                    🚀 Routenbeschreibungen erstellen
+                </button>
+            </div>
+
+            <!-- Route Description Status -->
+            <div class="route-status" id="routeDescriptionStatus" style="display: none;">
+                <div style="margin-bottom: 10px;">
+                    <strong>🔄 Routenbeschreibungen werden erstellt...</strong>
+                </div>
+                <div class="route-progress-bar">
+                    <div id="routeProgressBar" class="route-progress-fill"></div>
+                </div>
+                <div style="margin-top: 8px; font-size: 0.9rem; color: #b8cbd6;">
+                    <span id="routeProgressText">0 / 0 bearbeitet</span>
+                </div>
+            </div>
+
+			<!-- 7. Stadtradeln Eingabe-Assistent - Fertige Ergebnisse -->
+			<div class="collapsible-section" id="stadtradelnSection" style="display: none;">
+				<div class="collapsible-header" onclick="toggleSection('stadtradelnInputHelper')">
+					<div class="collapsible-title">
+						📝 Stadtradeln Eingabe-Assistent
+						<span class="collapsible-summary" id="stadtradelnSummary">0 Fahrten bereit</span>
+					</div>
+					<span class="collapsible-toggle" id="stadtradelnToggle">▶</span>
+				</div>
+				<div class="collapsible-content" id="stadtradelnInputHelper">
+					<p style="text-align: center; color: #b8cbd6; margin-bottom: 24px;">
+						Klicke auf die Werte um sie zu kopieren und in die Stadtradeln-Eingabemaske einzufügen
+					</p>
+					
+					<!-- Umschalter für Tagesmodus -->
+					<div style="margin-bottom: 20px; text-align: center;">
+						<label>
+							<input type="checkbox" id="toggleDailySummary" checked />
+							🚲 Pro Tag nur ein Eintrag anzeigen (Tagesmodus)
+						</label>
+					</div>
+					
+					<div id="tripInputCards"></div>
+					
+					<div class="navigation-controls">
+						<button class="nav-btn" id="prevTripBtn" onclick="navigateTrip(-1)" disabled>
+							⬅️ Vorherige Fahrt
+						</button>
+						<div class="trip-counter" id="tripCounter">
+							Fahrt 1 von 0
+						</div>
+						<button class="nav-btn" id="nextTripBtn" onclick="navigateTrip(1)">
+							Nächste Fahrt ➡️
+						</button>
+					</div>
+				</div>
+			</div>
+
+
+			<!-- 8. Detaillierte Fahrten-Analyse - Erweiterte Bearbeitung -->
+			<div class="collapsible-section" id="tripsAnalysisSection" style="display: none;">
+				<div class="collapsible-header" onclick="toggleSection('tripsSection')">
+					<div class="collapsible-title">
+						📋 Detaillierte Fahrten-Analyse
+						<span class="collapsible-summary" id="tripsSummary">0 Fahrten analysiert</span>
+					</div>
+					<span class="collapsible-toggle" id="tripsToggle">▶</span>
+				</div>
+				<div class="collapsible-content" id="tripsSection">
+					<div id="tripsList"></div>
+				</div>
+			</div>
+
+
+            <!-- Optionen-Tab -->
+            <div class="card" id="optionsTab" style="display: none; margin-bottom: 40px;">
+                <h3 class="card-title">⚙️ GPS-Optionen</h3>
+                <form id="optionsForm">
+                    <div class="stats-grid">
+                        <div class="stat-card">
+                            <label>Max. Geschwindigkeit (km/h):</label>
+                            <input type="number" id="optMaxSpeed" min="1" max="300" step="1">
+                        </div>
+                        <div class="stat-card">
+                            <label>Max. Beschleunigung (m/s²):</label>
+                            <input type="number" id="optMaxAcceleration" min="1" max="50" step="0.1">
+                        </div>
+                        <div class="stat-card">
+                            <label>Max. Sprungdistanz (Meter):</label>
+                            <input type="number" id="optMaxJumpDistance" min="10" max="10000" step="10">
+                        </div>
+                        <div class="stat-card">
+                            <label>Min. Genauigkeit (Meter):</label>
+                            <input type="number" id="optMinAccuracy" min="1" max="500" step="1">
+                        </div>
+                        <div class="stat-card">
+                            <label>Max. Zeitdifferenz (Sekunden):</label>
+                            <input type="number" id="optMaxTimeDelta" min="1" max="3600" step="1">
+                        </div>
+                        <div class="stat-card">
+                            <label>Speed Consistency Factor (faktorlos):</label>
+                            <input type="number" id="optSpeedConsistencyFactor" min="1" max="10" step="1">
+                        </div>
+                        <div class="stat-card">
+                            <label>Median-Filter Fenster (Anzahl):</label>
+                            <input type="number" id="optMedianFilterWindow" min="1" max="21" step="1">
+                        </div>
+                    </div>
+                    <div class="stats-grid">
+                        <div class="stat-card">
+                            <label>Geh-Geschw. min-max (km/h):</label>
+                            <input type="number" id="optWalkMin" min="0" max="20" step="1" style="width:60px;">
+                            <input type="number" id="optWalkMax" min="1" max="20" step="1" style="width:60px;">
+                        </div>
+                        <div class="stat-card">
+                            <label>Rad-Geschw. min-max (km/h):</label>
+                            <input type="number" id="optBikeMin" min="0" max="50" step="1" style="width:60px;">
+                            <input type="number" id="optBikeMax" min="1" max="50" step="1" style="width:60px;">
+                        </div>
+                        <div class="stat-card">
+                            <label>Auto-Geschw. min-max (km/h):</label>
+                            <input type="number" id="optVehicleMin" min="0" max="300" step="1" style="width:60px;">
+                            <input type="number" id="optVehicleMax" min="1" max="300" step="1" style="width:60px;">
+                        </div>
+                        <div class="stat-card">
+                            <label>Zug-Geschw. min-max (km/h):</label>
+                            <input type="number" id="optTrainMin" min="0" max="400" step="1" style="width:60px;">
+                            <input type="number" id="optTrainMax" min="1" max="400" step="1" style="width:60px;">
+                        </div>
+                    </div>
+                    <div class="stats-grid">
+                        <div class="stat-card">
+                            <label>Min. Fahrtdistanz (Meter):</label>
+                            <input type="number" id="optMinTripDistance" min="100" max="100000" step="100">
+                        </div>
+                        <div class="stat-card">
+                            <label>Min. Fahrtdauer (Sekunden):</label>
+                            <input type="number" id="optMinTripDuration" min="10" max="3600" step="10">
+                        </div>
+                        <div class="stat-card">
+                            <label>Max. Pausendauer (Sekunden):</label>
+                            <input type="number" id="optMaxPauseDuration" min="10" max="3600" step="10">
+                        </div>
+                    </div>
+                    <div class="btn-row">
+                        <button type="button" class="btn btn-primary" onclick="saveOptions()">Speichern</button>
+                        <button type="button" class="btn btn-secondary" onclick="resetOptionsToDefault()">Default</button>
+                    </div>
+                </form>
+            </div>
+
+            <!-- About-Tab -->
+            <div class="card" id="aboutTab" style="display: none; margin-bottom: 40px;">
+                <h3 class="card-title">ℹ️ Über dieses Tool</h3>
+                <p style="color: #b8cbd6; margin-bottom: 18px;">
+                    Hallo! Ich bin leidenschaftlicher Fahrradfahrer und unterstütze gerne die Aktion <b>Stadtradeln</b>.<br><br>
+                    Aus eigener Erfahrung weiß ich, wie leicht man vergisst, in der offiziellen Stadtradeln-App auf „manuell Record" zu klicken. Deshalb habe ich – mit Hilfe von <b>Künstlicher Intelligenz (KI)</b> wie <b>OpenAI GPT-4</b> und modernen Webtechnologien (z.B. <b>JavaScript</b>, <b>Leaflet</b>, <b>Chart.js</b>) – diese Auswerte-Seite entwickelt.<br><br>
+                    Ziel ist es, <b>GPX-, CSV- und KML/KMZ-Dateien</b> komfortabel auszuwerten und die Fahrten einfach ins Stadtradeln-Portal nachtragen zu können. Vielleicht hilft dieses Tool auch anderen, die ihre Strecken manuell erfassen oder nachtragen möchten.<br><br>
+                    <strong>Wozu ist Stadtradeln gut?</strong><br>
+                    Stadtradeln ist eine bundesweite Initiative, bei der möglichst viele Menschen im Aktionszeitraum aufs Fahrrad umsteigen, um gemeinsam Kilometer zu sammeln. Das fördert nicht nur den Klimaschutz und die eigene Gesundheit, sondern macht auch Spaß und stärkt die Fahrrad-Community vor Ort.<br><br>
+                    <strong>Funktionen dieses Tools:</strong>
+                    <ul style="margin-left: 18px; color: #b8cbd6;">
+                        <li>Import und Auswertung von <b>GPX</b>, <b>CSV</b> und <b>KML/KMZ</b> (Google Maps, My Maps, Timeline)</li>
+                        <li>Automatische Erkennung und Filterung von Fahrten (inkl. Bahnfahrt-Erkennung)</li>
+                        <li>Statistiken, Wochenübersicht, CO₂-Berechnung und Diagramme</li>
+                        <li>Stadtradeln-Eingabehelfer für das schnelle Nachtragen der Fahrten</li>
+                        <li>Export- und Kopierfunktionen für die Stadtradeln-App</li>
+                        <li>Optionale automatische Routenbeschreibung per KI und OpenStreetMap</li>
+                        <li>Alle Daten bleiben <b>lokal im Browser</b> – es werden <b>keine Daten gespeichert</b> oder weitergegeben</li>
+                    </ul>
+                    <br>
+                    <strong>Aktuelle Version:</strong> Juni 2025<br>
+                    <strong>Letztes Update:</strong> 13.06.2025<br>
+                    <strong>Verwendete KI:</strong> OpenAI GPT-4 (für Text- und Code-Generierung)<br>
+                    <strong>Kontakt:</strong> <a href="mailto:basecore@gmx.de" style="color:#c1ff00;">basecore@gmx.de</a><br><br>
+                    Dieses Tool ist ein privates, kostenloses Angebot ohne kommerzielle Interessen. Die Nutzung erfolgt ohne Gewähr. Ich freue mich über Feedback, Anregungen oder Fragen!
+                </p>
+            </div>
+
+            <!-- Bearbeitungsmodus Hinweis -->
+			<!-- Bearbeitungsmodus Hinweis -->
+			<div id="editStatus" style="display:none; background:#1e4a5f; color:#c1ff00; padding:10px; margin:20px 0; text-align:center; border-radius:8px; font-weight:600;">
+				⚠️ Bearbeitungsmodus aktiviert – Klicke 2 Punkte, um ein Segment zu erstellen.
+				<button onclick="exitEditMode()" style="margin-left:16px; background:#c1ff00; color:#0e3b4a; padding:6px 12px; border:none; border-radius:6px; cursor:pointer;">🚪 Modus verlassen</button>
+			</div>
+
+			<!-- Neue Transportmittel-Auswahl -->
+			<div id="transportModeSelection" style="display:none; background:#15425a; border:1px solid #1e4a5f; border-radius:8px; padding:20px; margin:20px 0; text-align:center;">
+				<h4 style="color:#c1ff00; margin-bottom:16px;">🚲 Transportmittel wählen:</h4>
+				<div class="transport-mode-buttons">
+					<button type="button" class="transport-btn bike-btn" onclick="selectTransportMode('bike')">
+						🚴‍♂️ Fahrrad
+					</button>
+					<button type="button" class="transport-btn walk-btn" onclick="selectTransportMode('walk')">
+						🚶‍♂️ Zu Fuß
+					</button>
+					<button type="button" class="transport-btn car-btn" onclick="selectTransportMode('car')">
+						🚗 Auto
+					</button>
+					<button type="button" class="transport-btn train-btn" onclick="selectTransportMode('train')">
+						🚂 Bahn
+					</button>
+				</div>
+			</div>
+
+
+            <!-- Map Container -->
+            <div class="map-container" id="mapContainer" style="display: none;">
+                <div id="map" style="height: 100%; width: 100%;"></div>
+            </div>
+
+            <!-- Filter Section (falls später noch benötigt) -->
+            <div class="filter-section" id="filterSection" style="display: none;">
+                <!-- Hier können später weitere Filteroptionen ergänzt werden -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Copy Notification -->
+    <div class="copy-notification" id="copyNotification">
+        📋 Wert kopiert!
+    </div>
+
+    <!-- JSON Help Modal -->
+    <div id="jsonHelpModal" style="display:none; position:fixed; left:0; top:0; width:100vw; height:100vh; background:rgba(14,59,74,0.75); z-index:9999; align-items:center; justify-content:center;">
+        <div style="background:#fff; color:#0e3b4a; max-width:400px; margin:auto; padding:32px 20px 20px 20px; border-radius:16px; box-shadow:0 4px 24px rgba(0,0,0,0.13); position:relative;">
+            <button onclick="document.getElementById('jsonHelpModal').style.display='none'" style="position:absolute; right:12px; top:10px; background:none; border:none; font-size:1.5em; color:#0e3b4a; cursor:pointer;">×</button>
+            <h2 style="margin-top:0; color:#1ed6ff; font-size:1.2em;">Google Maps JSON exportieren</h2>
+            <ol style="margin:0 0 0 18px; padding:0; color:#0e3b4a; font-size:1em;">
+                <li>Gehe auf <a href="https://takeout.google.com/" target="_blank" style="color:#1ed6ff;">takeout.google.com</a> und wähle <b>„Zeitachse"</b> oder <b>„Standortverlauf"</b> aus.</li>
+                <li>Starte den Export. Du erhältst eine ZIP-Datei mit Monatsdateien im <b>JSON-Format</b> (z.B. <code>2025_JUNE.json</code>).</li>
+                <li>Entpacke die ZIP-Datei und lade die gewünschte JSON-Datei hier hoch.</li>
+                <li>Optional: Du kannst die JSON-Datei mit Tools wie <a href="https://github.com/usbrpa/timeline2map" target="_blank" style="color:#1ed6ff;">timeline2map</a> oder <a href="https://www.gpsbabel.org/" target="_blank" style="color:#1ed6ff;">GPSBabel</a> in GPX/KML umwandeln.</li>
+            </ol>
+            <p style="margin-top:12px; color:#64748b; font-size:0.95em;">
+                Hinweis: Der Export als KML/KMZ ist für die meisten Nutzer nicht mehr direkt möglich. Die JSON-Dateien enthalten alle Bewegungsdaten.<br>
+                Bei Problemen siehe <b>Google Maps Timeline Hilfe</b>.
+            </p>
+            <button id="jsonStartUploadBtn" class="btn btn-primary" style="margin-top:24px; width:100%;">🗂️ JSON Upload starten [beta]</button>
+        </div>
+    </div>
+<script>
+// ===== V27.2 PERSISTENCE: localStorage für Stadtradeln-Zeitraum, Optionen =====
+const STORAGE_KEY = 'gpxtracker_settings_v2';
+
+function saveSettingsToStorage() {
+  const settings = {
+    stadtradelnStart: document.getElementById('stadtradelnStart')?.value || '',
+    stadtradelnEnd:   document.getElementById('stadtradelnEnd')?.value   || '',
+    nachtragEnd:      document.getElementById('nachtragEnd')?.value      || '',
+    minDistance:      document.getElementById('minDistanceKm')?.value    || '2',
+    // Optionen
+    optMaxSpeed:              document.getElementById('optMaxSpeed')?.value || '',
+    optMaxAcceleration:       document.getElementById('optMaxAcceleration')?.value || '',
+    optMaxJumpDistance:       document.getElementById('optMaxJumpDistance')?.value || '',
+    optMinAccuracy:           document.getElementById('optMinAccuracy')?.value || '',
+    optMaxTimeDelta:          document.getElementById('optMaxTimeDelta')?.value || '',
+    optSpeedConsistencyFactor:document.getElementById('optSpeedConsistencyFactor')?.value || '',
+    optMedianFilterWindow:    document.getElementById('optMedianFilterWindow')?.value || '',
+    optWalkMin:  document.getElementById('optWalkMin')?.value || '',
+    optWalkMax:  document.getElementById('optWalkMax')?.value || '',
+    optBikeMin:  document.getElementById('optBikeMin')?.value || '',
+    optBikeMax:  document.getElementById('optBikeMax')?.value || '',
+    optVehicleMin: document.getElementById('optVehicleMin')?.value || '',
+    optVehicleMax: document.getElementById('optVehicleMax')?.value || '',
+    optTrainMin:   document.getElementById('optTrainMin')?.value || '',
+    optTrainMax:   document.getElementById('optTrainMax')?.value || '',
+    optMinTripDistance: document.getElementById('optMinTripDistance')?.value || '',
+    optMinTripDuration: document.getElementById('optMinTripDuration')?.value || '',
+    optMaxPauseDuration:document.getElementById('optMaxPauseDuration')?.value || '',
+  };
+  try { localStorage.setItem(STORAGE_KEY, JSON.stringify(settings)); } catch(e) {}
+}
+
+function loadSettingsFromStorage() {
+  let settings;
+  try { settings = JSON.parse(localStorage.getItem(STORAGE_KEY) || 'null'); } catch(e) { settings = null; }
+  if (!settings) return;
+  const set = (id, val) => { const el = document.getElementById(id); if (el && val !== '') el.value = val; };
+  set('stadtradelnStart', settings.stadtradelnStart);
+  set('stadtradelnEnd',   settings.stadtradelnEnd);
+  set('nachtragEnd',      settings.nachtragEnd);
+  set('minDistanceKm',    settings.minDistance);
+  set('optMaxSpeed',              settings.optMaxSpeed);
+  set('optMaxAcceleration',       settings.optMaxAcceleration);
+  set('optMaxJumpDistance',       settings.optMaxJumpDistance);
+  set('optMinAccuracy',           settings.optMinAccuracy);
+  set('optMaxTimeDelta',          settings.optMaxTimeDelta);
+  set('optSpeedConsistencyFactor',settings.optSpeedConsistencyFactor);
+  set('optMedianFilterWindow',    settings.optMedianFilterWindow);
+  set('optWalkMin', settings.optWalkMin); set('optWalkMax', settings.optWalkMax);
+  set('optBikeMin', settings.optBikeMin); set('optBikeMax', settings.optBikeMax);
+  set('optVehicleMin', settings.optVehicleMin); set('optVehicleMax', settings.optVehicleMax);
+  set('optTrainMin',   settings.optTrainMin);   set('optTrainMax',   settings.optTrainMax);
+  set('optMinTripDistance', settings.optMinTripDistance);
+  set('optMinTripDuration', settings.optMinTripDuration);
+  set('optMaxPauseDuration',settings.optMaxPauseDuration);
+  // Werte sofort anwenden
+  if (typeof updateStadtradelnPeriod === 'function') updateStadtradelnPeriod();
+}
+
+function resetSettingsToDefault() {
+  if (!confirm('Alle gespeicherten Einstellungen zurücksetzen?')) return;
+  try { localStorage.removeItem(STORAGE_KEY); } catch(e) {}
+  // Stadtradeln-Defaults
+  const y = new Date().getFullYear();
+  const set = (id, val) => { const el = document.getElementById(id); if (el) el.value = val; };
+  set('stadtradelnStart', y + '-06-29');
+  set('stadtradelnEnd',   y + '-07-19');
+  set('nachtragEnd',      y + '-07-26');
+  set('minDistanceKm',    '2');
+  if (typeof updateStadtradelnPeriod === 'function') updateStadtradelnPeriod();
+  if (typeof resetOptionsToDefault === 'function') resetOptionsToDefault();
+  alert('Einstellungen zurückgesetzt.');
+}
+
+// Auto-save: bei jeder Änderung an Datum-Feldern
+['stadtradelnStart','stadtradelnEnd','nachtragEnd','minDistanceKm'].forEach(id => {
+  const el = document.getElementById(id);
+  if (el) el.addEventListener('change', saveSettingsToStorage);
+});
+
+// Beim Speichern der Optionen auch Settings speichern
+const _origSaveOptions = typeof saveOptions === 'function' ? saveOptions : null;
+if (_origSaveOptions) {
+  // Wir wrappen saveOptions um Storage-Call zu ergänzen
+  window._origSaveOptions = _origSaveOptions;
+}
+
+// Storage laden beim Start
+document.addEventListener('DOMContentLoaded', function() {
+  loadSettingsFromStorage();
+});
+// Falls DOM schon geladen:
+if (document.readyState !== 'loading') {
+  loadSettingsFromStorage();
+}
+// ===== ENDE PERSISTENCE =====
+</script>
+</body>
+
+
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script>
+        // Globale Variablen
+        let allTrips = [];
+        let filteredTrips = [];
+        let bikeTrips = [];
+        let currentTripIndex = 0;
+        let map = null;
+        let currentTripLayers = [];
+        let outlierStats = {
+            totalPoints: 0,
+            filteredPoints: 0,
+            maxJump: 0
+        };
+        let editingTrip = null;
+        let kmChart = null;
+
+        // Globale Variable für Routenbeschreibungs-Status
+        let routeDescriptionProgress = {
+            total: 0,
+            processed: 0,
+            isProcessing: false
+        };
+
+        // Konfigurierbare Zeitraum-Daten - NEUE STANDARDDATEN
+        let STADTRADELN_START = new Date(2025, 5, 29); // 29.06.2025
+        let STADTRADELN_END = new Date(2025, 6, 19);   // 19.07.2025
+        let NACHTRAG_END = new Date(2025, 6, 26);      // 26.07.2025
+		
+		// Wochen-Variablen initialisieren
+		let WEEK1_START = new Date(2025, 5, 29);  // 29.06.2025
+		let WEEK1_END = new Date(2025, 6, 5);     // 05.07.2025
+		let WEEK2_START = new Date(2025, 6, 6);   // 06.07.2025
+		let WEEK2_END = new Date(2025, 6, 12);    // 12.07.2025
+		let WEEK3_START = new Date(2025, 6, 13);  // 13.07.2025
+		let WEEK3_END = new Date(2025, 6, 19);    // 19.07.2025
+		
+		
+		// 🟨 Manuelle Segmentierungs-Funktionalität
+		let manualSegments = [];
+		let currentTripToSplit = null;
+		let splitStartIndex = null;
+		
+
+		let selectedTransportMode = null;
+
+		function selectTransportMode(mode) {
+			selectedTransportMode = mode;
+			
+			// Alle Buttons zurücksetzen
+			document.querySelectorAll('.transport-btn').forEach(btn => {
+				btn.classList.remove('selected');
+			});
+			
+			// Gewählten Button markieren
+			const selectedBtn = document.querySelector(`.${mode}-btn`);
+			if (selectedBtn) {
+				selectedBtn.classList.add('selected');
+			}
+			
+			console.log(`🚲 Transportmittel ausgewählt: ${mode}`);
+		}
+
+		// Überarbeitete handleManualSegmentClick Funktion
+		// Erweiterte handleManualSegmentClick Funktion mit Debug-Ausgaben
+		function handleManualSegmentClick(tripId, pointIndex) {
+			console.log(`🖱️ Punkt geklickt: Trip ${tripId}, Index ${pointIndex}`);
+			
+			const trip = filteredTrips.find(t => t.id === tripId);
+			if (!trip) {
+				console.error(`❌ Trip ${tripId} nicht in filteredTrips gefunden`);
+				return;
+			}
+
+			// Startpunkt setzen
+			if (!currentTripToSplit || currentTripToSplit.id !== trip.id) {
+				currentTripToSplit = trip;
+				splitStartIndex = pointIndex;
+				console.log(`📍 Startpunkt gesetzt: Trip ${tripId}, Index ${pointIndex}`);
+				alert(`▶️ Startpunkt gesetzt bei Punkt ${pointIndex + 1}. Klicke jetzt auf den Endpunkt.`);
+				return;
+			} else {
+				// Endpunkt gewählt - jetzt Transportmittel-Auswahl anzeigen
+				const start = Math.min(splitStartIndex, pointIndex);
+				const end = Math.max(splitStartIndex, pointIndex);
+
+				console.log(`🎯 Endpunkt gewählt: Start ${start}, End ${end}`);
+
+				if (start === end) {
+					alert("❌ Du musst zwei verschiedene Punkte als Segment wählen!");
+					resetSegmentSelection();
+					return;
+				}
+
+				// Zeige Transportmittel-Auswahl direkt bei der Karte
+				showTransportModeSelectionAtMap(tripId, start, end);
+			}
+		}
+
+
+		// Korrigierte showTransportModeSelectionAtMap Funktion
+		function showTransportModeSelectionAtMap(tripId, startIndex, endIndex) {
+			const trip = filteredTrips.find(t => t.id == tripId); // ✅ Verwende == statt ===
+			if (!trip) {
+				console.error(`❌ Trip mit ID ${tripId} nicht in filteredTrips gefunden`);
+				return;
+			}
+
+			// Erstelle Modal-Fenster
+			const modal = document.createElement('div');
+			modal.id = 'transportModeModal';
+			modal.style.cssText = `
+				position: fixed;
+				top: 0;
+				left: 0;
+				width: 100vw;
+				height: 100vh;
+				background: rgba(14, 59, 74, 0.9);
+				display: flex;
+				align-items: center;
+				justify-content: center;
+				z-index: 10000;
+			`;
+
+			const modalContent = document.createElement('div');
+			modalContent.style.cssText = `
+				background: #15425a;
+				border: 2px solid #c1ff00;
+				border-radius: 16px;
+				padding: 32px;
+				max-width: 500px;
+				width: 90%;
+				text-align: center;
+				box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+			`;
+
+			const distance = calculateSegmentDistance(trip.points.slice(startIndex, endIndex + 1));
+			
+			// ✅ Stelle sicher, dass tripId als korrekte ID übergeben wird
+			const correctTripId = trip.id;
+			
+			modalContent.innerHTML = `
+				<h3 style="color: #c1ff00; margin-bottom: 16px; font-size: 1.4rem;">
+					🚲 Transportmittel für neues Segment wählen
+				</h3>
+				<div style="color: #b8cbd6; margin-bottom: 24px; font-size: 0.9rem;">
+					<strong>Segment:</strong> Punkt ${startIndex + 1} bis ${endIndex + 1}<br>
+					<strong>Distanz:</strong> ${(distance / 1000).toFixed(2)} km
+				</div>
+				<div class="transport-mode-buttons" style="margin-bottom: 24px;">
+					<button type="button" class="transport-btn bike-btn" onclick="selectTransportModeAndCreate('${correctTripId}', ${startIndex}, ${endIndex}, 'bike')">
+						🚴‍♂️ Fahrrad
+					</button>
+					<button type="button" class="transport-btn walk-btn" onclick="selectTransportModeAndCreate('${correctTripId}', ${startIndex}, ${endIndex}, 'walk')">
+						🚶‍♂️ Zu Fuß
+					</button>
+					<button type="button" class="transport-btn car-btn" onclick="selectTransportModeAndCreate('${correctTripId}', ${startIndex}, ${endIndex}, 'car')">
+						🚗 Auto
+					</button>
+					<button type="button" class="transport-btn train-btn" onclick="selectTransportModeAndCreate('${correctTripId}', ${startIndex}, ${endIndex}, 'train')">
+						🚂 Bahn
+					</button>
+				</div>
+				<button onclick="closeTransportModeModal()" style="background: #64748b; color: #fff; border: none; padding: 10px 20px; border-radius: 8px; cursor: pointer;">
+					❌ Abbrechen
+				</button>
+			`;
+
+			modal.appendChild(modalContent);
+			document.body.appendChild(modal);
+
+			// Schließen bei Klick außerhalb
+			modal.addEventListener('click', (e) => {
+				if (e.target === modal) {
+					closeTransportModeModal();
+				}
+			});
+		}
+
+
+		// Funktion zum Berechnen der Segment-Distanz
+		function calculateSegmentDistance(points) {
+			let totalDistance = 0;
+			for (let i = 0; i < points.length - 1; i++) {
+				totalDistance += calculateDistance(
+					points[i].lat, points[i].lon,
+					points[i + 1].lat, points[i + 1].lon
+				);
+			}
+			return totalDistance;
+		}
+
+		// Transportmittel auswählen und Segment erstellen
+		function selectTransportModeAndCreate(tripId, startIndex, endIndex, mode) {
+			const modeMap = {
+				bike: 'biking',
+				walk: 'walking',
+				car: 'vehicle',
+				train: 'train'
+			};
+
+			console.log(`🔧 Erstelle Segment: Trip ${tripId}, Start: ${startIndex}, End: ${endIndex}, Mode: ${mode}`);
+
+			// ✅ FIX: Trip-ID korrekt als Number konvertieren
+			const numericTripId = typeof tripId === 'string' ? parseFloat(tripId) : tripId;
+			
+			const newTrip = addManualSegmentAsTrip(numericTripId, startIndex, endIndex, modeMap[mode]);
+			
+			if (newTrip) {
+				// ✅ WICHTIG: Zu allTrips hinzufügen
+				allTrips.push(newTrip);
+				
+				// ✅ Filter neu anwenden um das neue Segment auch in filteredTrips zu bekommen
+				applyFilters();
+				
+				// ✅ UI komplett aktualisieren
+				displayResults();
+				updateMap();
+				setupStadtradelnInputHelper();
+				
+				const modeNames = {
+					bike: 'Fahrrad',
+					walk: 'Zu Fuß',
+					car: 'Auto',
+					train: 'Bahn'
+				};
+				
+				showSegmentCreatedNotification(modeNames[mode], newTrip.distance);
+				
+				console.log(`✅ Segment erfolgreich erstellt: ${newTrip.id}, ${(newTrip.distance/1000).toFixed(2)} km`);
+			} else {
+				console.error('❌ Fehler beim Erstellen des Segments');
+				alert('❌ Fehler beim Erstellen des Segments. Bitte versuche es erneut.');
+			}
+
+			closeTransportModeModal();
+			resetSegmentSelection();
+		}
+
+
+
+		// Modal schließen
+		function closeTransportModeModal() {
+			const modal = document.getElementById('transportModeModal');
+			if (modal) {
+				modal.remove();
+			}
+		}
+
+		// Erfolgsmeldung anzeigen
+		function showSegmentCreatedNotification(modeName, distance) {
+			const notification = document.createElement('div');
+			notification.style.cssText = `
+				position: fixed;
+				top: 20px;
+				right: 20px;
+				background: #10b981;
+				color: white;
+				padding: 16px 24px;
+				border-radius: 12px;
+				font-weight: 600;
+				z-index: 10001;
+				box-shadow: 0 4px 16px rgba(16, 185, 129, 0.3);
+				animation: slideIn 0.3s ease-out;
+			`;
+			
+			notification.innerHTML = `
+				✅ ${modeName}-Segment erstellt!<br>
+				<span style="font-size: 0.9rem; opacity: 0.9;">
+					${(distance / 1000).toFixed(2)} km
+				</span>
+			`;
+			
+			document.body.appendChild(notification);
+			
+			setTimeout(() => {
+				notification.style.animation = 'slideOut 0.3s ease-in';
+				setTimeout(() => notification.remove(), 300);
+			}, 3000);
+		}
+
+		// Erweiterte resetSegmentSelection Funktion
+		function resetSegmentSelection() {
+			splitStartIndex = null;
+			currentTripToSplit = null;
+			selectedTransportMode = null;
+			
+			// Alle Buttons zurücksetzen
+			document.querySelectorAll('.transport-btn').forEach(btn => {
+				btn.classList.remove('selected');
+			});
+			
+			// Altes Auswahl-Bereich ausblenden (falls noch vorhanden)
+			const selectionDiv = document.getElementById('transportModeSelection');
+			if (selectionDiv) {
+				selectionDiv.style.display = 'none';
+			}
+		}
+
+
+		function showTransportModeSelection() {
+			const selectionDiv = document.getElementById('transportModeSelection');
+			if (selectionDiv) {
+				selectionDiv.style.display = 'block';
+			}
+		}
+
+		function resetSegmentSelection() {
+			splitStartIndex = null;
+			currentTripToSplit = null;
+			selectedTransportMode = null;
+			
+			// Alle Buttons zurücksetzen
+			document.querySelectorAll('.transport-btn').forEach(btn => {
+				btn.classList.remove('selected');
+			});
+			
+			// Auswahl-Bereich ausblenden
+			const selectionDiv = document.getElementById('transportModeSelection');
+			if (selectionDiv) {
+				selectionDiv.style.display = 'none';
+			}
+		}
+
+
+
+		function saveData() {
+			const data = {
+				allTrips,
+				options: {
+					OUTLIER_DETECTION,
+					SPEED_THRESHOLDS,
+					MIN_TRIP_DISTANCE,
+					MIN_TRIP_DURATION,
+					MAX_PAUSE_DURATION,
+					STADTRADELN_START,
+					STADTRADELN_END,
+					NACHTRAG_END
+				}
+			};
+			const json = JSON.stringify(data, null, 2);
+			const blob = new Blob([json], { type: 'application/json' });
+			const url = URL.createObjectURL(blob);
+			const a = document.createElement('a');
+			a.href = url;
+			a.download = 'gpx_tracker_export.json';
+			document.body.appendChild(a);
+			a.click();
+			document.body.removeChild(a);
+			URL.revokeObjectURL(url);
+		}
+
+		function loadData() {
+			document.getElementById('loadDataFile').click();
+		}
+
+// Toggle-Funktion für eingeklappte Bereiche
+		function toggleSection(sectionId) {
+			const content = document.getElementById(sectionId);
+			
+			// ✅ NULL-CHECK HINZUFÜGEN
+			if (!content) {
+				console.error(`Element mit ID '${sectionId}' nicht gefunden`);
+				return;
+			}
+			
+			// Dynamische Toggle-ID-Ermittlung
+			let toggleId = sectionId.replace('Grid', 'Toggle')
+								   .replace('Helper', 'Toggle')
+								   .replace('Section', 'Toggle');
+			
+			// Spezielle Behandlung für die drei Hauptbereiche
+			if (sectionId === 'dashboardGrid') toggleId = 'dashboardToggle';
+			if (sectionId === 'stadtradelnInputHelper') toggleId = 'stadtradelnToggle';
+			if (sectionId === 'tripsSection') toggleId = 'tripsToggle';
+			
+			const toggle = document.getElementById(toggleId);
+			
+			// ✅ NULL-CHECK FÜR TOGGLE-BUTTON
+			if (!toggle) {
+				console.error(`Toggle-Button mit ID '${toggleId}' nicht gefunden`);
+				return;
+			}
+			
+			if (content.classList.contains('expanded')) {
+				// Einklappen
+				content.classList.remove('expanded');
+				toggle.classList.remove('expanded');
+				toggle.textContent = '▶';
+			} else {
+				// Ausklappen
+				content.classList.add('expanded');
+				toggle.classList.add('expanded');
+				toggle.textContent = '▼';
+			}
+		}
+
+
+		// Aktualisiere Zusammenfassungen in den Headers
+		function updateCollapsibleSummaries() {
+			// Dashboard Summary
+			const dashboardSummary = document.getElementById('dashboardSummary');
+			if (dashboardSummary) {
+				const totalKm = document.getElementById('totalBikeKm')?.textContent || '0';
+				const totalTrips = document.getElementById('totalBikeTrips')?.textContent || '0';
+				dashboardSummary.textContent = `${totalKm} km, ${totalTrips} Fahrten`;
+			}
+			
+			// Stadtradeln Summary
+			const stadtradelnSummary = document.getElementById('stadtradelnSummary');
+			if (stadtradelnSummary) {
+				const bikeTripsCount = bikeTrips ? bikeTrips.length : 0;
+				stadtradelnSummary.textContent = `${bikeTripsCount} Fahrten bereit`;
+			}
+			
+			// Trips Summary
+			const tripsSummary = document.getElementById('tripsSummary');
+			if (tripsSummary) {
+				const filteredCount = filteredTrips ? filteredTrips.length : 0;
+				tripsSummary.textContent = `${filteredCount} Fahrten analysiert`;
+			}
+		}
+
+
+
+		document.getElementById('loadDataFile').addEventListener('change', handleLoadData);
+
+		function handleLoadData(event) {
+			const file = event.target.files[0];
+			if (!file) return;
+			const reader = new FileReader();
+			reader.onload = (e) => {
+				try {
+					const loaded = JSON.parse(e.target.result);
+					if (loaded.allTrips && Array.isArray(loaded.allTrips)) {
+						allTrips = loaded.allTrips;
+						applyFilters();
+					}
+					if (loaded.options) {
+						if (loaded.options.OUTLIER_DETECTION) OUTLIER_DETECTION = loaded.options.OUTLIER_DETECTION;
+						if (loaded.options.SPEED_THRESHOLDS) SPEED_THRESHOLDS = loaded.options.SPEED_THRESHOLDS;
+						if (typeof loaded.options.MIN_TRIP_DISTANCE === 'number')
+							MIN_TRIP_DISTANCE = loaded.options.MIN_TRIP_DISTANCE;
+						if (typeof loaded.options.MIN_TRIP_DURATION === 'number')
+							MIN_TRIP_DURATION = loaded.options.MIN_TRIP_DURATION;
+						if (typeof loaded.options.MAX_PAUSE_DURATION === 'number')
+							MAX_PAUSE_DURATION = loaded.options.MAX_PAUSE_DURATION;
+						if (loaded.options.STADTRADELN_START) STADTRADELN_START = new Date(loaded.options.STADTRADELN_START);
+						if (loaded.options.STADTRADELN_END) STADTRADELN_END = new Date(loaded.options.STADTRADELN_END);
+						if (loaded.options.NACHTRAG_END) NACHTRAG_END = new Date(loaded.options.NACHTRAG_END);
+						if (typeof loadOptions === "function") loadOptions();
+					}
+					alert("Alle gespeicherten Fahrten und Optionen wurden erfolgreich geladen.");
+				} catch (error) {
+					alert("Fehler beim Laden der Datei: " + error.message);
+				}
+			};
+			reader.readAsText(file);
+		}
+
+
+		function drawManualSegmentLine(points, mode) {
+		  const colors = {
+			bike: '#c1ff00', walk: '#1ed6ff', car: '#64748b', train: '#ff6b6b'
+		  };
+		  const latlngs = points.map(p => [p.lat, p.lon]);
+		  const poly = L.polyline(latlngs, {
+			color: colors[mode] || '#ffffff',
+			weight: 5, dashArray: '5,6', opacity: 0.9
+		  }).addTo(map);
+		  currentTripLayers.push(poly);
+		}
+
+		function addManualSegmentAsTrip(tripId, start, end, mode) {
+			// ✅ Suche sowohl mit Number als auch String-Vergleich
+			const origTrip = allTrips.find(t => t.id == tripId || t.id === tripId);
+			
+			if (!origTrip) {
+				console.error(`❌ Original-Trip mit ID ${tripId} nicht gefunden`);
+				console.log(`🔍 Verfügbare Trip-IDs:`, allTrips.map(t => t.id));
+				return null;
+			}
+			
+			if (start >= end) {
+				console.error(`❌ Ungültige Indizes: start=${start}, end=${end}`);
+				return null;
+			}
+			
+			if (!origTrip.points || origTrip.points.length === 0) {
+				console.error(`❌ Keine GPS-Punkte in Original-Trip ${tripId}`);
+				return null;
+			}
+			
+			if (end >= origTrip.points.length) {
+				console.error(`❌ End-Index ${end} außerhalb der verfügbaren Punkte (${origTrip.points.length})`);
+				return null;
+			}
+
+			const points = origTrip.points.slice(start, end + 1);
+			if (points.length < 2) {
+				console.error(`❌ Zu wenige Punkte für Segment: ${points.length}`);
+				return null;
+			}
+
+			// ✅ Erstelle neues Trip-Objekt
+			const trip = analyzeTrip(points);
+			trip.id = Date.now() + Math.random(); // Neue eindeutige ID
+			trip.mode = mode;
+			trip.originalMode = mode;
+			trip.isModified = true;
+			trip.comment = `[Manuell] Segment ${start + 1}–${end + 1} aus Trip ${origTrip.id}`;
+			trip.points = points;
+			trip.startTime = points[0].time;
+			trip.endTime = points[points.length - 1].time;
+			trip.startLocation = { lat: points[0].lat, lon: points[0].lon };
+			trip.endLocation = { lat: points[points.length - 1].lat, lon: points[points.length - 1].lon };
+
+			console.log(`✅ Manuelles Segment erstellt: ${trip.id}, ${points.length} Punkte, ${(trip.distance/1000).toFixed(2)} km`);
+			return trip;
+		}
+
+
+
+
+
+
+        // Bahnhof-Koordinaten mit 100m Radius für Bahnfahrt-Erkennung
+        const TRAIN_STATIONS = {
+            regensburg: {
+                name: "HBF Regensburg",
+                lat: 49.0134,
+                lon: 12.0991,
+                radius: 100 // Meter
+            },
+            freising: {
+                name: "Bahnhof Freising",
+                lat: 48.3989,
+                lon: 11.7461,
+                radius: 100 // Meter
+            }
+        };
+
+        // GPS-Parameter
+		let OUTLIER_DETECTION = {
+			maxSpeed: 120,
+			maxAcceleration: 10,
+			maxJumpDistance: 1000,
+			minAccuracy: 100,
+			maxTimeDelta: 300,
+			speedConsistencyFactor: 3,
+			medianFilterWindow: 5
+		};
+
+		let SPEED_THRESHOLDS = {
+			walking: { min: 0, max: 9 },
+			biking: { min: 10, max: 35 },
+			vehicle: { min: 35, max: 200 },
+			train: { min: 40, max: 160 }
+		};
+
+		let MIN_TRIP_DISTANCE = 2000;
+		let MIN_TRIP_DURATION = 120;
+		let MAX_PAUSE_DURATION = 300;
+		
+		function getCurrentWeekIndex() {
+			const today = new Date();
+			for (let i = 0; i < window.weeks.length; i++) {
+				if (today >= window.weeks[i].start && today <= window.weeks[i].end) {
+					return i;
+				}
+			}
+			// Falls heute vor dem Zeitraum liegt, gib -1 zurück
+			if (today < window.weeks[0].start) return -1;
+			// Falls heute nach dem Zeitraum liegt, gib die letzte Woche zurück
+			return window.weeks.length - 1;
+		}
+
+
+
+		// Funktion zum Setzen des aktiven Tabs
+		function setActiveTab(tabId) {
+			document.getElementById('tabDashboard').classList.remove('active');
+			document.getElementById('tabOptions').classList.remove('active');
+			document.getElementById('tabAbout').classList.remove('active');
+			document.getElementById(tabId).classList.add('active');
+			
+			// Mobile Tabbar synchronisieren
+			document.getElementById('mobileTabDashboard').classList.remove('active');
+			document.getElementById('mobileTabOptions').classList.remove('active');
+			document.getElementById('mobileTabAbout').classList.remove('active');
+		}
+
+		// Dashboard-Tab
+		document.getElementById('tabDashboard').addEventListener('click', function() {
+			setActiveTab('tabDashboard');
+			
+			// Alle anderen Bereiche ausblenden
+			document.getElementById('aboutTab').style.display = 'none';
+			document.getElementById('optionsTab').style.display = 'none';
+			
+			// Dashboard-Bereiche anzeigen
+			document.getElementById('stadtradelnConfig').style.display = 'block';
+			document.getElementById('uploadSection').style.display = 'block';
+			document.getElementById('pageTitle').style.display = 'block';
+			
+			// Eingeklappte Bereiche anzeigen
+			document.getElementById('dashboardSection').style.display = 'block';
+			document.getElementById('stadtradelnSection').style.display = 'block';
+			document.getElementById('tripsAnalysisSection').style.display = 'block';
+			
+			// Weitere Bereiche anzeigen falls Daten vorhanden
+			if (filteredTrips && filteredTrips.length > 0) {
+				document.getElementById('outlierStats').style.display = 'block';
+				document.getElementById('routeDescriptionSection').style.display = 'block';
+				document.getElementById('mapContainer').style.display = 'block';
+			}
+			
+			// Importierte Daten Info anzeigen falls vorhanden
+			const importedDataInfo = document.getElementById('importedDataInfo');
+			if (importedDataInfo && allTrips && allTrips.length > 0) {
+				importedDataInfo.style.display = 'block';
+			}
+		});
+
+		// Optionen-Tab
+		document.getElementById('tabOptions').addEventListener('click', function() {
+			setActiveTab('tabOptions');
+			loadOptions();
+			
+			// Alle anderen Bereiche ausblenden
+			document.getElementById('aboutTab').style.display = 'none';
+			document.getElementById('optionsTab').style.display = 'block';
+			document.getElementById('stadtradelnConfig').style.display = 'none';
+			document.getElementById('uploadSection').style.display = 'none';
+			document.getElementById('pageTitle').style.display = 'none';
+			document.getElementById('mapContainer').style.display = 'none';
+			
+			// Eingeklappte Bereiche ausblenden
+			document.getElementById('dashboardSection').style.display = 'none';
+			document.getElementById('stadtradelnSection').style.display = 'none';
+			document.getElementById('tripsAnalysisSection').style.display = 'none';
+			
+			// Weitere Bereiche ausblenden
+			document.getElementById('outlierStats').style.display = 'none';
+			document.getElementById('routeDescriptionSection').style.display = 'none';
+			document.getElementById('routeDescriptionStatus').style.display = 'none';
+			
+			// Importierte Daten Info ausblenden
+			const importedDataInfo = document.getElementById('importedDataInfo');
+			if (importedDataInfo) {
+				importedDataInfo.style.display = 'none';
+			}
+		});
+
+		// About-Tab
+		document.getElementById('tabAbout').addEventListener('click', function() {
+			setActiveTab('tabAbout');
+			
+			// About-Tab anzeigen
+			document.getElementById('aboutTab').style.display = 'block';
+			
+			// Alle anderen Bereiche ausblenden
+			document.getElementById('optionsTab').style.display = 'none';
+			document.getElementById('stadtradelnConfig').style.display = 'none';
+			document.getElementById('uploadSection').style.display = 'none';
+			document.getElementById('pageTitle').style.display = 'none';
+			document.getElementById('mapContainer').style.display = 'none';
+			
+			// Eingeklappte Bereiche ausblenden
+			document.getElementById('dashboardSection').style.display = 'none';
+			document.getElementById('stadtradelnSection').style.display = 'none';
+			document.getElementById('tripsAnalysisSection').style.display = 'none';
+			
+			// Weitere Bereiche ausblenden
+			document.getElementById('outlierStats').style.display = 'none';
+			document.getElementById('routeDescriptionSection').style.display = 'none';
+			document.getElementById('routeDescriptionStatus').style.display = 'none';
+			
+			// Importierte Daten Info ausblenden
+			const importedDataInfo = document.getElementById('importedDataInfo');
+			if (importedDataInfo) {
+				importedDataInfo.style.display = 'none';
+			}
+		});
+
+		// Mobile Tabbar
+		document.getElementById('mobileTabDashboard').addEventListener('click', function () {
+			setActiveTab('tabDashboard');
+			document.getElementById('tabDashboard').click();
+			document.getElementById('mobileTabDashboard').classList.add('active');
+			document.getElementById('mobileTabOptions').classList.remove('active');
+			document.getElementById('mobileTabAbout').classList.remove('active');
+		});
+
+		document.getElementById('mobileTabOptions').addEventListener('click', function () {
+			setActiveTab('tabOptions');
+			document.getElementById('tabOptions').click();
+			document.getElementById('mobileTabOptions').classList.add('active');
+			document.getElementById('mobileTabDashboard').classList.remove('active');
+			document.getElementById('mobileTabAbout').classList.remove('active');
+		});
+
+		document.getElementById('mobileTabAbout').addEventListener('click', function () {
+			setActiveTab('tabAbout');
+			document.getElementById('tabAbout').click();
+			document.getElementById('mobileTabAbout').classList.add('active');
+			document.getElementById('mobileTabDashboard').classList.remove('active');
+			document.getElementById('mobileTabOptions').classList.remove('active');
+		});
+
+
+
+
+
+		// Initialisiere Optionsfelder mit aktuellen Werten
+		function loadOptions() {
+			document.getElementById('optMaxSpeed').value = OUTLIER_DETECTION.maxSpeed;
+			document.getElementById('optMaxAcceleration').value = OUTLIER_DETECTION.maxAcceleration;
+			document.getElementById('optMaxJumpDistance').value = OUTLIER_DETECTION.maxJumpDistance;
+			document.getElementById('optMinAccuracy').value = OUTLIER_DETECTION.minAccuracy;
+			document.getElementById('optMaxTimeDelta').value = OUTLIER_DETECTION.maxTimeDelta;
+			document.getElementById('optSpeedConsistencyFactor').value = OUTLIER_DETECTION.speedConsistencyFactor;
+			document.getElementById('optMedianFilterWindow').value = OUTLIER_DETECTION.medianFilterWindow;
+			document.getElementById('optWalkMin').value = SPEED_THRESHOLDS.walking.min;
+			document.getElementById('optWalkMax').value = SPEED_THRESHOLDS.walking.max;
+			document.getElementById('optBikeMin').value = SPEED_THRESHOLDS.biking.min;
+			document.getElementById('optBikeMax').value = SPEED_THRESHOLDS.biking.max;
+			document.getElementById('optVehicleMin').value = SPEED_THRESHOLDS.vehicle.min;
+			document.getElementById('optVehicleMax').value = SPEED_THRESHOLDS.vehicle.max;
+			document.getElementById('optTrainMin').value = SPEED_THRESHOLDS.train.min;
+			document.getElementById('optTrainMax').value = SPEED_THRESHOLDS.train.max;
+			document.getElementById('optMinTripDistance').value = MIN_TRIP_DISTANCE;
+			document.getElementById('optMinTripDuration').value = MIN_TRIP_DURATION;
+			document.getElementById('optMaxPauseDuration').value = MAX_PAUSE_DURATION;
+		}
+		
+		function resetOptionsToDefault() {
+			// Standardwerte wie im Code definiert
+			OUTLIER_DETECTION = {
+				maxSpeed: 120,
+				maxAcceleration: 10,
+				maxJumpDistance: 1000,
+				minAccuracy: 100,
+				maxTimeDelta: 300,
+				speedConsistencyFactor: 3,
+				medianFilterWindow: 5
+			};
+
+			SPEED_THRESHOLDS = {
+				walking: { min: 0, max: 9 },
+				biking: { min: 10, max: 35 },
+				vehicle: { min: 35, max: 200 },
+				train: { min: 40, max: 160 }
+			};
+
+			MIN_TRIP_DISTANCE = 2000;
+			MIN_TRIP_DURATION = 120;
+			MAX_PAUSE_DURATION = 300;
+
+			// Felder im Formular aktualisieren
+			loadOptions();
+			saveOptions(); // Optional: Analyse direkt neu starten
+		}
+
+		function saveOptions() {
+			// Optionen aus den Feldern übernehmen
+			OUTLIER_DETECTION.maxSpeed = parseFloat(document.getElementById('optMaxSpeed').value);
+			OUTLIER_DETECTION.maxAcceleration = parseFloat(document.getElementById('optMaxAcceleration').value);
+			OUTLIER_DETECTION.maxJumpDistance = parseFloat(document.getElementById('optMaxJumpDistance').value);
+			OUTLIER_DETECTION.minAccuracy = parseFloat(document.getElementById('optMinAccuracy').value);
+			OUTLIER_DETECTION.maxTimeDelta = parseFloat(document.getElementById('optMaxTimeDelta').value);
+			OUTLIER_DETECTION.speedConsistencyFactor = parseFloat(document.getElementById('optSpeedConsistencyFactor').value);
+			OUTLIER_DETECTION.medianFilterWindow = parseInt(document.getElementById('optMedianFilterWindow').value);
+
+			SPEED_THRESHOLDS.walking.min = parseFloat(document.getElementById('optWalkMin').value);
+			SPEED_THRESHOLDS.walking.max = parseFloat(document.getElementById('optWalkMax').value);
+			SPEED_THRESHOLDS.biking.min = parseFloat(document.getElementById('optBikeMin').value);
+			SPEED_THRESHOLDS.biking.max = parseFloat(document.getElementById('optBikeMax').value);
+			SPEED_THRESHOLDS.vehicle.min = parseFloat(document.getElementById('optVehicleMin').value);
+			SPEED_THRESHOLDS.vehicle.max = parseFloat(document.getElementById('optVehicleMax').value);
+			SPEED_THRESHOLDS.train.min = parseFloat(document.getElementById('optTrainMin').value);
+			SPEED_THRESHOLDS.train.max = parseFloat(document.getElementById('optTrainMax').value);
+
+			MIN_TRIP_DISTANCE = parseInt(document.getElementById('optMinTripDistance').value);
+			MIN_TRIP_DURATION = parseInt(document.getElementById('optMinTripDuration').value);
+			MAX_PAUSE_DURATION = parseInt(document.getElementById('optMaxPauseDuration').value);
+
+			alert('Optionen gespeichert! Die Analyse wird mit den neuen Einstellungen neu gestartet.');
+
+			// Daten und Upload-Inputs zurücksetzen
+			allTrips = [];
+			filteredTrips = [];
+			bikeTrips = [];
+			if (typeof allRawPoints !== 'undefined') {
+				allRawPoints = [];
+			}
+
+			// File-Inputs zurücksetzen, damit neue Dateien wieder ausgewählt werden können
+			function clearFileInputs() {
+				const gpxInput = document.getElementById('gpxFile');
+				const csvInput = document.getElementById('csvFile');
+				const kmlInput = document.getElementById('kmlFile');
+				if (kmlInput) {
+					kmlInput.value = '';
+					if (kmlInput.value) {
+						kmlInput.parentNode.replaceChild(kmlInput.cloneNode(true), kmlInput);
+					}
+				}
+				if (gpxInput) {
+					gpxInput.value = '';
+					// Fallback für manche Browser:
+					if (gpxInput.value) {
+						gpxInput.parentNode.replaceChild(gpxInput.cloneNode(true), gpxInput);
+					}
+				}
+				if (csvInput) {
+					csvInput.value = '';
+					if (csvInput.value) {
+						csvInput.parentNode.replaceChild(csvInput.cloneNode(true), csvInput);
+					}
+				}
+			}
+			clearFileInputs();
+
+			// UI zurücksetzen (optional, falls du Bereiche ausblenden willst)
+			document.getElementById('dashboardGrid').style.display = 'none';
+			document.getElementById('tripsSection').style.display = 'none';
+			document.getElementById('exportSection').style.display = 'none';
+			document.getElementById('stadtradelnInputHelper').style.display = 'none';
+			document.getElementById('routeDescriptionSection').style.display = 'none';
+			document.getElementById('outlierStats').style.display = 'none';
+			document.getElementById('filterSection').style.display = 'none';
+			if (document.getElementById('importedDataInfo')) {
+				document.getElementById('importedDataInfo').style.display = 'none';
+			}
+
+			// Hinweis für den Nutzer
+			alert('Bitte lade die GPS-Daten erneut hoch, damit die neuen Optionen vollständig angewendet werden können.');
+		}
+
+        // Event Listeners
+        document.getElementById('gpxFile').addEventListener('change', handleMultipleGPXFiles);
+        document.getElementById('csvFile').addEventListener('change', handleMultipleCSVFiles);
+		
+		document.getElementById('kmlFile').addEventListener('change', handleMultipleKMLFiles);
+		document.getElementById('jsonFile').addEventListener('change', handleMultipleJSONFiles);
+
+
+		function handleMultipleKMLFiles(event) {
+			const files = Array.from(event.target.files);
+			if (files.length === 0) return;
+
+			if (document.getElementById('coarseGPXMode').checked) {
+				OUTLIER_DETECTION.maxTimeDelta = 1200;
+				MIN_TRIP_DISTANCE = 200;
+				MIN_TRIP_DURATION = 30;
+				MAX_PAUSE_DURATION = 1800;
+				SPEED_THRESHOLDS.walking.max = 12;
+				SPEED_THRESHOLDS.biking.max = 45;
+				SPEED_THRESHOLDS.vehicle.max = 220;
+				alert('Filter wurden für grobe KML/KMZ-Tracks automatisch angepasst.');
+			}
+
+			updateProgress(5);
+			processMultipleFiles(files, 'kml');
+		}
+
+		
+		function handleMultipleJSONFiles(event) {
+			const files = Array.from(event.target.files);
+			if (files.length === 0) return;
+
+			if (document.getElementById('coarseGPXMode').checked) {
+				OUTLIER_DETECTION.maxTimeDelta = 1200;
+				MIN_TRIP_DISTANCE = 200;
+				MIN_TRIP_DURATION = 30;
+				MAX_PAUSE_DURATION = 1800;
+				SPEED_THRESHOLDS.walking.max = 12;
+				SPEED_THRESHOLDS.biking.max = 45;
+				SPEED_THRESHOLDS.vehicle.max = 220;
+				alert('Filter wurden für grobe JSON-Tracks automatisch angepasst.');
+			}
+
+			updateProgress(5);
+			processMultipleFiles(files, 'json');
+		}
+
+
+
+		
+        document.getElementById('loadDataFile').addEventListener('change', handleLoadData);
+
+        // Chart.js Setup
+        Chart.defaults.color = '#b8cbd6';
+        Chart.defaults.borderColor = '#1e4a5f';
+
+        // Utility Functions
+        function updateProgress(percent) {
+            document.getElementById('progressFill').style.width = percent + '%';
+        }
+
+        function calculateDistance(lat1, lon1, lat2, lon2) {
+            const R = 6371000;
+            const dLat = (lat2 - lat1) * Math.PI / 180;
+            const dLon = (lon2 - lon1) * Math.PI / 180;
+            const a = Math.sin(dLat/2) * Math.sin(dLat/2) +
+                      Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+                      Math.sin(dLon/2) * Math.sin(dLon/2);
+            const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+            return R * c;
+        }
+
+        function calculateSpeed(point1, point2) {
+            const distance = calculateDistance(point1.lat, point1.lon, point2.lat, point2.lon);
+            const timeDiff = (point2.time - point1.time) / 1000;
+            return timeDiff > 0 ? (distance / timeDiff) * 3.6 : 0;
+        }
+
+        // Funktion zur Überprüfung ob ein Punkt in der Nähe eines Bahnhofs ist
+        function isNearStation(lat, lon, station) {
+            const distance = calculateDistance(lat, lon, station.lat, station.lon);
+            return distance <= station.radius;
+        }
+
+        // Hilfsfunktion zur Berechnung der Gesamtdistanz
+        function calculateTotalDistance(points) {
+            let totalDistance = 0;
+            for (let i = 0; i < points.length - 1; i++) {
+                totalDistance += calculateDistance(
+                    points[i].lat, points[i].lon,
+                    points[i + 1].lat, points[i + 1].lon
+                );
+            }
+            return totalDistance;
+        }
+
+        // Funktion zur Erkennung von Bahnfahrten
+        function isTrainTrip(points) {
+            if (points.length < 10) return false; // Zu kurz für Bahnfahrt
+            
+            const startPoint = points[0];
+            const endPoint = points[points.length - 1];
+            
+            // Prüfe ob Start oder Ende an einem der beiden Bahnhöfe ist
+            const startAtRegensburg = isNearStation(startPoint.lat, startPoint.lon, TRAIN_STATIONS.regensburg);
+            const startAtFreising = isNearStation(startPoint.lat, startPoint.lon, TRAIN_STATIONS.freising);
+            const endAtRegensburg = isNearStation(endPoint.lat, endPoint.lon, TRAIN_STATIONS.regensburg);
+            const endAtFreising = isNearStation(endPoint.lat, endPoint.lon, TRAIN_STATIONS.freising);
+            
+            // Gültige Bahnfahrt: Regensburg ↔ Freising
+            const validTrainRoute = (startAtRegensburg && endAtFreising) || (startAtFreising && endAtRegensburg);
+            
+            if (!validTrainRoute) return false;
+            
+            // Zusätzliche Validierung: Geschwindigkeit und Distanz
+            const speeds = points.map(point => point.speed).filter(s => s > 0);
+            const avgSpeed = speeds.length > 0 ? speeds.reduce((a, b) => a + b, 0) / speeds.length : 0;
+            const maxSpeed = speeds.length > 0 ? Math.max(...speeds) : 0;
+            
+            // Typische Zuggeschwindigkeiten: 40-160 km/h
+            const hasTrainSpeed = avgSpeed >= 40 && maxSpeed <= 160;
+            
+            // Mindestdistanz zwischen den Bahnhöfen (ca. 65km)
+            const totalDistance = calculateTotalDistance(points);
+            const hasTrainDistance = totalDistance >= 50000; // 50km Mindestdistanz
+            
+            return hasTrainSpeed && hasTrainDistance;
+        }
+
+        // Stadtradeln-Zeitraum aktualisieren mit dynamischen Wochen
+		function updateStadtradelnPeriod() {
+			const startInput = document.getElementById('stadtradelnStart');
+			const endInput = document.getElementById('stadtradelnEnd');
+			const nachtragInput = document.getElementById('nachtragEnd');
+			
+			STADTRADELN_START = new Date(startInput.value);
+			STADTRADELN_END = new Date(endInput.value);
+			
+			// Automatisch Nachtragezeitraum auf eine Woche nach Stadtradeln-Ende setzen
+			const nachtragDate = new Date(STADTRADELN_END);
+			nachtragDate.setDate(nachtragDate.getDate() + 7);
+			NACHTRAG_END = nachtragDate;
+			
+			// Aktualisiere das Input-Feld automatisch
+			nachtragInput.value = NACHTRAG_END.toISOString().split('T')[0];
+			
+			// Wochen berechnen
+			calculateWeeks();
+			
+			// UI aktualisieren
+			updatePeriodDisplays();
+			
+			// Automatisch Filter anwenden wenn Trips vorhanden
+			if (allTrips.length > 0) {
+				applyFilters(); // Das löst auch die Karten-Aktualisierung aus
+			}
+			
+			console.log('📅 Stadtradeln-Zeitraum aktualisiert:', {
+				start: STADTRADELN_START.toLocaleDateString('de-DE'),
+				end: STADTRADELN_END.toLocaleDateString('de-DE'),
+				nachtrag: NACHTRAG_END.toLocaleDateString('de-DE')
+			});
+		}
+		
+		function calculateWeeks() {
+			// Berechne die Anzahl der Tage im Stadtradeln-Zeitraum
+			const totalDays = Math.ceil((STADTRADELN_END - STADTRADELN_START) / (1000 * 60 * 60 * 24)) + 1;
+			const numberOfWeeks = Math.ceil(totalDays / 7);
+			
+			// Lösche vorherige Wochen-Variablen
+			window.weeks = [];
+			
+			// Erstelle Wochen mit jeweils 7 Tagen
+			for (let i = 0; i < numberOfWeeks; i++) {
+				const weekStart = new Date(STADTRADELN_START.getTime() + (i * 7 * 24 * 60 * 60 * 1000));
+				let weekEnd = new Date(weekStart.getTime() + (6 * 24 * 60 * 60 * 1000));
+				
+				// Stelle sicher, dass die letzte Woche nicht über das Enddatum hinausgeht
+				if (weekEnd > STADTRADELN_END) {
+					weekEnd = new Date(STADTRADELN_END);
+				}
+				
+				window.weeks.push({
+					start: weekStart,
+					end: weekEnd,
+					number: i + 1
+				});
+			}
+			
+			// Setze die ersten 3 Wochen für Rückwärtskompatibilität
+			if (window.weeks.length >= 1) {
+				WEEK1_START = window.weeks[0].start;
+				WEEK1_END = window.weeks[0].end;
+			}
+			if (window.weeks.length >= 2) {
+				WEEK2_START = window.weeks[1].start;
+				WEEK2_END = window.weeks[1].end;
+			}
+			if (window.weeks.length >= 3) {
+				WEEK3_START = window.weeks[2].start;
+				WEEK3_END = window.weeks[2].end;
+			}
+			
+			console.log(`📅 ${numberOfWeeks} Wochen berechnet für Zeitraum ${STADTRADELN_START.toLocaleDateString('de-DE')} - ${STADTRADELN_END.toLocaleDateString('de-DE')}`);
+		}
+
+		function updatePeriodDisplays() {
+			const statsPeriod = document.getElementById('statsPeriod');
+			if (!window.weeks || window.weeks.length === 0) calculateWeeks();
+
+			const currentWeekIdx = getCurrentWeekIndex();
+			let periodEnd = STADTRADELN_END;
+			if (currentWeekIdx >= 0) {
+				periodEnd = window.weeks[currentWeekIdx].end;
+			}
+			statsPeriod.innerHTML = `
+				Zeitraum: ${STADTRADELN_START.toLocaleDateString('de-DE')} - ${periodEnd.toLocaleDateString('de-DE')}<br>
+				Nachtragezeitraum: ${new Date(STADTRADELN_END.getTime() + 24 * 60 * 60 * 1000).toLocaleDateString('de-DE')} - ${NACHTRAG_END.toLocaleDateString('de-DE')}
+			`;
+			// ... Chart-Legende wie gehabt
+
+            
+            // Chart-Legende dynamisch aktualisieren
+			const chartLegend = document.getElementById('chartLegend');
+			chartLegend.innerHTML = '';
+
+			const colors = ['#c1ff00', '#1ed6ff', '#a2e900', '#ff6b6b', '#4ecdc4', '#45b7d1', '#96ceb4', '#feca57'];
+
+			if (window.weeks) {
+				const currentWeekIdx = getCurrentWeekIndex();
+				// Nur bis einschließlich aktuelle Woche anzeigen
+				for (let index = 0; index <= currentWeekIdx; index++) {
+					const week = window.weeks[index];
+					const legendItem = document.createElement('div');
+					legendItem.className = 'legend-item';
+					legendItem.innerHTML = `
+						<div class="legend-dot" style="background: ${colors[index % colors.length]};"></div>
+						<span id="week${index + 1}Label">${index + 1}. Woche (${week.start.toLocaleDateString('de-DE', {day: '2-digit', month: '2-digit'})}-${week.end.toLocaleDateString('de-DE', {day: '2-digit', month: '2-digit'})})</span>
+					`;
+					chartLegend.appendChild(legendItem);
+				}
+			}
+        }
+
+		function showAndroidPage() {
+		  document.getElementById('takeoutPage').style.display = 'none';
+		  document.getElementById('androidPage').style.display = 'block';
+		}
+		function showTakeoutPage() {
+		  document.getElementById('androidPage').style.display = 'none';
+		  document.getElementById('takeoutPage').style.display = 'block';
+		}
+
+
+        // Multi-File Upload Handler
+		function handleMultipleGPXFiles(event) {
+			const files = Array.from(event.target.files);
+			if (files.length === 0) return;
+
+			// Automatische Analyse-Filter für grobe GPX-Daten aktivieren
+			if (document.getElementById('coarseGPXMode').checked) {
+				OUTLIER_DETECTION.maxTimeDelta = 1200;       // 20 Minuten Abstand erlaubt
+				MIN_TRIP_DISTANCE = 200;                     // mind. 200 m pro Fahrt
+				MIN_TRIP_DURATION = 30;                      // mind. 30 Sekunden pro Fahrt
+				MAX_PAUSE_DURATION = 1800;                   // bis zu 30 Minuten Pause noch gleiche Fahrt
+				SPEED_THRESHOLDS.walking.max = 12;
+				SPEED_THRESHOLDS.biking.max = 45;
+				SPEED_THRESHOLDS.vehicle.max = 220;
+				alert('Filter wurden für grobe GPX-Tracks automatisch angepasst (Pausen, Mindestwerte, Geschwindigkeiten). Du kannst sie nach dem Import im Optionen-Tab weiter anpassen.');
+			}
+
+			updateProgress(5);
+			processMultipleFiles(files, 'gpx');
+		}
+
+
+		function handleMultipleCSVFiles(event) {
+			const files = Array.from(event.target.files);
+			if (files.length === 0) return;
+
+			if (document.getElementById('coarseGPXMode').checked) {
+				OUTLIER_DETECTION.maxTimeDelta = 1200;
+				MIN_TRIP_DISTANCE = 200;
+				MIN_TRIP_DURATION = 30;
+				MAX_PAUSE_DURATION = 1800;
+				SPEED_THRESHOLDS.walking.max = 12;
+				SPEED_THRESHOLDS.biking.max = 45;
+				SPEED_THRESHOLDS.vehicle.max = 220;
+				alert('Filter wurden für grobe CSV-Tracks automatisch angepasst.');
+			}
+
+			updateProgress(5);
+			processMultipleFiles(files, 'csv');
+		}
+
+
+		function parseGoogleTimelineJSON(jsonText) {
+			let data;
+			try {
+				data = JSON.parse(jsonText);
+			} catch (e) {
+				alert('Fehler beim Parsen der JSON-Datei!');
+				return [];
+			}
+
+			// Unterstützt Google Takeout (Location History) und Android Timeline-Export
+			let locations = [];
+			if (data.locations && Array.isArray(data.locations)) {
+				// Google Takeout JSON
+				locations = data.locations;
+			} else if (data.timelineObjects && Array.isArray(data.timelineObjects)) {
+				// Android Timeline-Export
+				// Extrahiere alle PlaceVisits und ActivitySegments
+				data.timelineObjects.forEach(obj => {
+					if (obj.activitySegment && obj.activitySegment.waypointPath && obj.activitySegment.waypointPath.waypoints) {
+						obj.activitySegment.waypointPath.waypoints.forEach(wp => {
+							locations.push({
+								latitudeE7: wp.latE7,
+								longitudeE7: wp.lngE7,
+								timestamp: wp.timestamp
+							});
+						});
+					} else if (obj.placeVisit && obj.placeVisit.location) {
+						locations.push({
+							latitudeE7: obj.placeVisit.location.latitudeE7,
+							longitudeE7: obj.placeVisit.location.longitudeE7,
+							timestamp: obj.placeVisit.duration && obj.placeVisit.duration.startTimestamp
+						});
+					}
+				});
+			} else {
+				alert('Unbekanntes JSON-Format!');
+				return [];
+			}
+
+			// Konvertiere Google-Format in Standardpunkt-Array
+			const points = [];
+			locations.forEach(loc => {
+				let lat = loc.latitudeE7 !== undefined ? loc.latitudeE7 / 1e7 : (loc.latE7 !== undefined ? loc.latE7 / 1e7 : null);
+				let lon = loc.longitudeE7 !== undefined ? loc.longitudeE7 / 1e7 : (loc.lngE7 !== undefined ? loc.lngE7 / 1e7 : null);
+				let time = null;
+
+				// Google Takeout: timestampMs, Android: timestamp oder startTimestamp
+				if (loc.timestampMs) {
+					time = new Date(Number(loc.timestampMs));
+				} else if (loc.timestamp) {
+					time = new Date(loc.timestamp);
+				} else if (loc.startTimestamp) {
+					time = new Date(loc.startTimestamp);
+				}
+
+				if (lat !== null && lon !== null && time && !isNaN(time.getTime())) {
+					points.push({
+						lat: lat,
+						lon: lon,
+						elevation: 0,
+						time: time,
+						speed: 0,
+						accuracy: loc.accuracy || 10,
+						isOutlier: false
+					});
+				}
+			});
+
+			return points;
+		}
+
+
+
+		// Multi-File Upload Handler - importiert vollständige Dateien OHNE Zeitraum-Filterung
+		async function processMultipleFiles(files, fileType) {
+			let allPoints = [];
+			let processedFiles = 0;
+			let dateRangeInfo = {
+				minDate: null,
+				maxDate: null,
+				totalPoints: 0
+			};
+
+			for (const file of files) {
+				try {
+					let points = [];
+					if (fileType === 'gpx' || fileType === 'csv') {
+						const content = await readFileContent(file);
+						if (fileType === 'gpx') {
+							points = parseGPXContent(content);
+						} else if (fileType === 'csv') {
+							points = parseCSVContent(content);
+						}
+					} 
+					else if (fileType === 'kml') {
+						if (file.name.endsWith('.kml')) {
+							const content = await readFileContent(file);
+							points = parseKMLContent(content);
+						} 
+						else if (file.name.endsWith('.kmz')) {
+							const arrayBuffer = await readFileContent(file, 'arrayBuffer');
+							points = await parseKMZFile(arrayBuffer);
+						}
+					}
+					else if (fileType === 'json') {
+						const content = await readFileContent(file);
+						points = parseGoogleTimelineJSON(content);
+					}
+					// Sammle Datumsinformationen ALLER Punkte
+					points.forEach(point => {
+						dateRangeInfo.totalPoints++;
+						if (!dateRangeInfo.minDate || point.time < dateRangeInfo.minDate) {
+							dateRangeInfo.minDate = point.time;
+						}
+						if (!dateRangeInfo.maxDate || point.time > dateRangeInfo.maxDate) {
+							dateRangeInfo.maxDate = point.time;
+						}
+					});
+
+					allPoints = allPoints.concat(points);
+					processedFiles++;
+					
+					const progress = 10 + (processedFiles / files.length) * 40;
+					updateProgress(progress);
+
+				} catch (error) {
+					console.error(`Fehler beim Verarbeiten von ${file.name}:`, error);
+				}
+			}
+
+			if (allPoints.length > 0) {
+				updateProgress(50);
+				showImportedDataInfo(dateRangeInfo);
+				processTrackingData(allPoints);
+			} else {
+				alert('Keine gültigen GPS-Daten in den Dateien gefunden!');
+				updateProgress(0);
+			}
+		}
+
+
+		// Neue Funktion: Zeige Informationen über importierte Daten
+		function showImportedDataInfo(dateRangeInfo) {
+			const infoDiv = document.getElementById('importedDataInfo');
+			if (!infoDiv) return;
+			
+			const totalTripsSpan = document.getElementById('totalImportedTrips');
+			const dateRangeSpan = document.getElementById('importedDateRange');
+			
+			if (dateRangeInfo.minDate && dateRangeInfo.maxDate) {
+				const startDate = dateRangeInfo.minDate.toLocaleDateString('de-DE');
+				const endDate = dateRangeInfo.maxDate.toLocaleDateString('de-DE');
+				
+				// Prüfe ob importierte Daten außerhalb des konfigurierten Zeitraums liegen
+				const hasDataOutsideRange = dateRangeInfo.minDate < STADTRADELN_START || dateRangeInfo.maxDate > NACHTRAG_END;
+				
+				if (hasDataOutsideRange) {
+					totalTripsSpan.textContent = `Zeitbereich ${startDate} - ${endDate}`;
+					dateRangeSpan.textContent = 'außerhalb des konfigurierten Zeitraums';
+				} else {
+					totalTripsSpan.textContent = allTrips.length;
+					dateRangeSpan.textContent = `Fahrten vom ${startDate} - ${endDate}`;
+				}
+				
+				infoDiv.style.display = 'block';
+				
+				console.log(`📊 Importierte Daten: ${dateRangeInfo.totalPoints} GPS-Punkte vom ${startDate} bis ${endDate}`);
+			}
+		}
+
+
+		// Neue Funktion: Aktualisiere Anzeige der gefilterten Fahrten
+		function updateFilteredTripsDisplay() {
+			const filteredCountSpan = document.getElementById('filteredTripsCount');
+			if (filteredCountSpan) {
+				filteredCountSpan.textContent = filteredTrips.length;
+			}
+		}
+
+        function readFileContent(file) {
+            return new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.onload = (e) => resolve(e.target.result);
+                reader.onerror = (e) => reject(e);
+                reader.readAsText(file);
+            });
+        }
+
+        function parseGPXContent(gpxContent) {
+            const parser = new DOMParser();
+            const xmlDoc = parser.parseFromString(gpxContent, "text/xml");
+            const trackPoints = xmlDoc.querySelectorAll('trkpt');
+            
+            const points = [];
+            trackPoints.forEach(point => {
+                const lat = parseFloat(point.getAttribute('lat'));
+                const lon = parseFloat(point.getAttribute('lon'));
+                const eleElement = point.querySelector('ele');
+                const timeElement = point.querySelector('time');
+                
+                if (lat && lon && timeElement) {
+                    points.push({
+                        lat: lat,
+                        lon: lon,
+                        elevation: eleElement ? parseFloat(eleElement.textContent) : 0,
+                        time: new Date(timeElement.textContent),
+                        speed: 0,
+                        accuracy: 10,
+                        isOutlier: false
+                    });
+                }
+            });
+            
+            return points;
+        }
+
+        function parseCSVContent(csvContent) {
+            const lines = csvContent.trim().split('\n');
+            const headers = lines[0].split(',');
+            
+            const points = [];
+            for (let i = 1; i < lines.length; i++) {
+                const values = lines[i].split(',');
+                const point = {};
+                
+                headers.forEach((header, index) => {
+                    point[header.trim()] = values[index]?.trim();
+                });
+
+                if (point.lat && point.lon && point.time) {
+                    points.push({
+                        lat: parseFloat(point.lat),
+                        lon: parseFloat(point.lon),
+                        elevation: parseFloat(point.elevation) || 0,
+                        time: new Date(point.time),
+                        speed: parseFloat(point.speed) || 0,
+                        accuracy: parseFloat(point.accuracy) || 10,
+                        isOutlier: false
+                    });
+                }
+            }
+            
+            return points;
+        }
+		
+		function parseKMLContent(kmlText) {
+			const parser = new DOMParser();
+			const xmlDoc = parser.parseFromString(kmlText, "application/xml");
+			const gxNS = "http://www.google.com/kml/ext/2.2";
+			const points = [];
+
+			// Alle gx:Track-Elemente im Dokument finden
+			const tracks = xmlDoc.getElementsByTagNameNS(gxNS, "Track");
+			for (let i = 0; i < tracks.length; i++) {
+				const track = tracks[i];
+				// Alle <when> und <gx:coord> in der Reihenfolge extrahieren
+				const whens = [];
+				const coords = [];
+				for (let node = track.firstElementChild; node; node = node.nextElementSibling) {
+					if (node.localName === "when") {
+						whens.push(node.textContent.trim());
+					}
+					if (node.localName === "coord") {
+						coords.push(node.textContent.trim());
+					}
+				}
+				// Zeit und Koordinate zuordnen
+				for (let j = 0; j < Math.min(whens.length, coords.length); j++) {
+					const [lon, lat, alt] = coords[j].split(' ').map(Number);
+					const time = new Date(whens[j]);
+					if (!isNaN(lat) && !isNaN(lon) && !isNaN(time.getTime())) {
+						points.push({
+							lat,
+							lon,
+							elevation: alt || 0,
+							time,
+							speed: 0,
+							accuracy: 10,
+							isOutlier: false
+						});
+					}
+				}
+			}
+
+			// Zusätzlich klassische LineString/coordinates unterstützen (falls vorhanden)
+			xmlDoc.querySelectorAll('LineString > coordinates').forEach(coordTag => {
+				const coords = coordTag.textContent.trim().split(/\s+/);
+				coords.forEach(c => {
+					const [lon, lat, alt] = c.split(',').map(Number);
+					if (!isNaN(lat) && !isNaN(lon)) {
+						points.push({
+							lat, lon, elevation: alt || 0,
+							time: new Date(),
+							speed: 0, accuracy: 10, isOutlier: false
+						});
+					}
+				});
+			});
+
+			return points;
+		}
+
+
+
+
+
+		async function parseKMZFile(arrayBuffer) {
+			const zip = await JSZip.loadAsync(arrayBuffer);
+			const kmlFiles = [];
+			
+			zip.forEach((relativePath, zipEntry) => {
+				if (zipEntry.name.endsWith('.kml')) {
+					kmlFiles.push(zipEntry);
+				}
+			});
+
+			let allPoints = [];
+			for (const kmlFile of kmlFiles) {
+				const kmlText = await kmlFile.async('text');
+				allPoints = allPoints.concat(parseKMLContent(kmlText));
+			}
+			
+			return allPoints;
+		}
+
+
+
+        function detectOutliers(points) {
+            outlierStats.totalPoints = points.length;
+            let filteredCount = 0;
+            let maxJump = 0;
+
+            for (let i = 0; i < points.length; i++) {
+                const point = points[i];
+                
+                if (Math.abs(point.lat) > 90 || Math.abs(point.lon) > 180) {
+                    point.isOutlier = true;
+                    filteredCount++;
+                    continue;
+                }
+                
+                if (point.accuracy > OUTLIER_DETECTION.minAccuracy) {
+                    point.isOutlier = true;
+                    filteredCount++;
+                    continue;
+                }
+            }
+
+            for (let i = 1; i < points.length; i++) {
+                const prev = points[i-1];
+                const curr = points[i];
+                
+                if (prev.isOutlier || curr.isOutlier) continue;
+
+                const distance = calculateDistance(prev.lat, prev.lon, curr.lat, curr.lon);
+                const timeDiff = (curr.time - prev.time) / 1000;
+                const speed = timeDiff > 0 ? (distance / timeDiff) * 3.6 : 0;
+
+                if (distance > maxJump) {
+                    maxJump = distance;
+                }
+
+                if (speed > OUTLIER_DETECTION.maxSpeed) {
+                    curr.isOutlier = true;
+                    filteredCount++;
+                    continue;
+                }
+
+                if (distance > OUTLIER_DETECTION.maxJumpDistance && timeDiff < 60) {
+                    curr.isOutlier = true;
+                    filteredCount++;
+                    continue;
+                }
+
+                if (timeDiff > OUTLIER_DETECTION.maxTimeDelta) {
+                    curr.isOutlier = true;
+                    filteredCount++;
+                    continue;
+                }
+            }
+
+            outlierStats.filteredPoints = filteredCount;
+            outlierStats.maxJump = maxJump / 1000;
+            
+            return points.filter(point => !point.isOutlier);
+        }
+
+        function detectStops(points) {
+            const stops = [];
+            let currentStop = null;
+
+            for (let i = 0; i < points.length - 1; i++) {
+                const speed = calculateSpeed(points[i], points[i + 1]);
+                
+                if (speed < 1) {
+                    if (!currentStop) {
+                        currentStop = {
+                            startIndex: i,
+                            startTime: points[i].time,
+                            lat: points[i].lat,
+                            lon: points[i].lon
+                        };
+                    }
+                } else {
+                    if (currentStop) {
+                        currentStop.endIndex = i;
+                        currentStop.endTime = points[i].time;
+                        currentStop.duration = (currentStop.endTime - currentStop.startTime) / 1000;
+                        
+                        if (currentStop.duration > 30) {
+                            stops.push(currentStop);
+                        }
+                        currentStop = null;
+                    }
+                }
+            }
+
+            return stops;
+        }
+
+        // Erweiterte Transportmittel-Klassifizierung mit Bahnfahrt-Erkennung
+		function classifyTransportMode(segment) {
+			const speeds = segment.map(point => point.speed).filter(s => s > 0);
+			if (speeds.length === 0) return 'walking';
+
+			const percentile90 = speeds.sort((a, b) => a - b)[Math.floor(speeds.length * 0.9)];
+			
+			// Prüfe zuerst auf Bahnfahrt
+			if (isTrainTrip(segment)) {
+				return 'train';
+			}
+			
+			// Nutze die aktuellen Schwellenwerte aus SPEED_THRESHOLDS
+			if (percentile90 >= SPEED_THRESHOLDS.vehicle.min && percentile90 <= SPEED_THRESHOLDS.vehicle.max) {
+				return 'vehicle';
+			} else if (percentile90 >= SPEED_THRESHOLDS.biking.min && percentile90 <= SPEED_THRESHOLDS.biking.max) {
+				return 'biking';
+			} else if (percentile90 >= SPEED_THRESHOLDS.walking.min && percentile90 <= SPEED_THRESHOLDS.walking.max) {
+				return 'walking';
+			} else {
+				// Fallback: Modus mit größter Überlappung oder Standard
+				return 'walking';
+			}
+		}
+
+
+        function segmentTrips(points) {
+            const stops = detectStops(points);
+            const trips = [];
+            let currentTripStart = 0;
+
+            stops.forEach(stop => {
+                if (stop.startIndex > currentTripStart) {
+                    const tripPoints = points.slice(currentTripStart, stop.startIndex + 1);
+                    if (tripPoints.length > 1) {
+                        const trip = analyzeTrip(tripPoints);
+                        if (trip.distance >= MIN_TRIP_DISTANCE && trip.duration >= MIN_TRIP_DURATION) {
+                            trips.push(trip);
+                        }
+                    }
+                }
+                currentTripStart = stop.endIndex || stop.startIndex + 1;
+            });
+
+            if (currentTripStart < points.length - 1) {
+                const tripPoints = points.slice(currentTripStart);
+                if (tripPoints.length > 1) {
+                    const trip = analyzeTrip(tripPoints);
+                    if (trip.distance >= MIN_TRIP_DISTANCE && trip.duration >= MIN_TRIP_DURATION) {
+                        trips.push(trip);
+                    }
+                }
+            }
+
+            return trips;
+        }
+
+        function analyzeTrip(points) {
+            for (let i = 0; i < points.length - 1; i++) {
+                points[i].speed = calculateSpeed(points[i], points[i + 1]);
+            }
+
+            let totalDistance = 0;
+            const speeds = [];
+
+            for (let i = 0; i < points.length - 1; i++) {
+                const distance = calculateDistance(
+                    points[i].lat, points[i].lon,
+                    points[i + 1].lat, points[i + 1].lon
+                );
+                totalDistance += distance;
+                
+                if (points[i].speed > 0) {
+                    speeds.push(points[i].speed);
+                }
+            }
+
+            const duration = (points[points.length - 1].time - points[0].time) / 1000;
+            const avgSpeed = speeds.length > 0 ? speeds.reduce((a, b) => a + b, 0) / speeds.length : 0;
+            const maxSpeed = speeds.length > 0 ? Math.max(...speeds) : 0;
+            
+            const mode = classifyTransportMode(points);
+
+            return {
+                id: Date.now() + Math.random(),
+                startTime: points[0].time,
+                endTime: points[points.length - 1].time,
+                duration: duration,
+                distance: totalDistance,
+                avgSpeed: avgSpeed,
+                maxSpeed: maxSpeed,
+                mode: mode,
+                originalMode: mode,
+                points: points,
+                startLocation: { lat: points[0].lat, lon: points[0].lon },
+                endLocation: { lat: points[points.length - 1].lat, lon: points[points.length - 1].lon },
+                comment: '',
+                isModified: false
+            };
+        }
+
+		function processTrackingData(points) {
+			updateProgress(60);
+			
+			console.log('🔍 Starte GPS-Datenbereinigung...');
+			const cleanedPoints = detectOutliers(points);
+			
+			updateProgress(70);
+			
+			cleanedPoints.sort((a, b) => a.time - b.time);
+			allTrips = segmentTrips(cleanedPoints);
+			
+			updateProgress(80);
+			
+			displayOutlierStats();
+			applyFilters();
+			updateProgress(100);
+			
+			displayResults();
+			initializeMap();
+			setupStadtradelnInputHelper();
+			
+			// ✅ SICHERHEITS-CHECKS HINZUFÜGEN
+			const routeSection = document.getElementById('routeDescriptionSection');
+			if (routeSection) routeSection.style.display = 'block';
+			
+			const dashboardSection = document.getElementById('dashboardSection');
+			if (dashboardSection) dashboardSection.style.display = 'block';
+			
+			const tripsSection = document.getElementById('tripsAnalysisSection');
+			if (tripsSection) tripsSection.style.display = 'block';
+			
+			const outlierSection = document.getElementById('outlierStats');
+			if (outlierSection) outlierSection.style.display = 'block';
+			
+			console.log(`📊 Verarbeitung abgeschlossen: ${allTrips.length} Fahrten importiert, ${filteredTrips.length} im Stadtradeln-Zeitraum`);
+		}
+
+
+        function displayOutlierStats() {
+            document.getElementById('totalPoints').textContent = outlierStats.totalPoints;
+            document.getElementById('filteredPoints').textContent = outlierStats.filteredPoints;
+            document.getElementById('dataQuality').textContent = 
+                ((1 - outlierStats.filteredPoints / outlierStats.totalPoints) * 100).toFixed(1) + '%';
+            document.getElementById('maxJump').textContent = outlierStats.maxJump.toFixed(2) + ' km';
+        }
+
+		function applyFilters() {
+			const startDate = new Date(document.getElementById('stadtradelnStart').value);
+			const endDate = new Date(document.getElementById('stadtradelnEnd').value);
+			const minDistance = parseFloat(document.getElementById('minDistance').value) * 1000;
+			const maxSpeed = parseFloat(document.getElementById('maxSpeed').value);
+
+			console.log(`🔧 Filter angewendet: ${startDate.toLocaleDateString('de-DE')} - ${endDate.toLocaleDateString('de-DE')}, Min: ${minDistance/1000}km, Max: ${maxSpeed}km/h`);
+
+			filteredTrips = allTrips.filter(trip => {
+				const tripDate = new Date(trip.startTime);
+				const inTimeRange = tripDate >= startDate && tripDate <= endDate;
+				
+				// Unterschiedliche Kriterien für manuelle vs. automatische Trips
+				if (trip.isModified) {
+					// Manuelle Segmente: Nur Zeit und moderate Geschwindigkeit prüfen
+					return inTimeRange && 
+						   trip.maxSpeed <= 100 && // Toleranter für manuelle Segmente
+						   trip.distance >= 50;    // Minimal 50m für manuelle Segmente
+				} else {
+					// Automatische Trips: Alle Filter anwenden
+					return inTimeRange && 
+						   trip.distance >= minDistance &&
+						   trip.maxSpeed <= maxSpeed;
+				}
+			});
+
+			updateFilteredTripsDisplay();
+			displayResults();
+			
+			if (map && filteredTrips.length > 0) {
+				updateMap();
+			} else if (filteredTrips.length > 0) {
+				initializeMap();
+			}
+			
+			setupStadtradelnInputHelper();
+			
+			console.log(`✅ ${filteredTrips.length} von ${allTrips.length} Fahrten nach Filterung (${filteredTrips.filter(t => t.isModified).length} manuelle Segmente)`);
+		}
+
+
+
+		// Erweiterte displayResults() Funktion
+		function displayResults() {
+			updateStatistics();
+			displayTripsList();
+			updateChartsWithRealData();
+			updateDataTableWithRealData();
+			
+			// ✅ SICHERE ANZEIGE DER BEREICHE
+			const dashboardSection = document.getElementById('dashboardSection');
+			if (dashboardSection) dashboardSection.style.display = 'block';
+			
+			const stadtradelnSection = document.getElementById('stadtradelnSection');
+			if (stadtradelnSection) stadtradelnSection.style.display = 'block';
+			
+			const tripsAnalysisSection = document.getElementById('tripsAnalysisSection');
+			if (tripsAnalysisSection) tripsAnalysisSection.style.display = 'block';
+			
+			// Zusammenfassungen aktualisieren
+			updateCollapsibleSummaries();
+		}
+
+
+		function updateStatistics() {
+			const bikeTripsFiltered = filteredTrips.filter(trip => trip.mode === 'biking');
+			if (!window.weeks || window.weeks.length === 0) calculateWeeks();
+
+			const currentWeekIdx = getCurrentWeekIndex();
+			const showWeeks = currentWeekIdx >= 0 ? currentWeekIdx + 1 : 0;
+			
+			const today = new Date();
+			let totalDays = 0;
+			if (today >= STADTRADELN_START) {
+				// Bis maximal heute oder bis zum Enddatum, falls das schon vorbei ist
+				const lastDay = today > STADTRADELN_END ? STADTRADELN_END : today;
+				totalDays = Math.floor((lastDay - STADTRADELN_START) / (1000 * 60 * 60 * 24)) + 1;
+			updateCollapsibleSummaries();
+			}
+
+
+			// Alle Fahrten bis einschließlich aktueller Tag
+			const validTrips = bikeTripsFiltered.filter(trip => {
+				const tripDate = new Date(trip.startTime);
+				return tripDate >= STADTRADELN_START && tripDate <= today;
+			});
+
+			const totalKm = validTrips.reduce((sum, trip) => sum + trip.distance, 0) / 1000;
+			const totalTrips = validTrips.length;
+			const avgKmPerDay = totalKm > 0 && totalDays > 0 ? (totalKm / totalDays).toFixed(1) : 0;
+			const co2Saved = (totalKm * 0.17).toFixed(1);
+
+
+			document.getElementById('totalBikeKm').textContent = totalKm.toFixed(1);
+			document.getElementById('totalBikeTrips').textContent = totalTrips;
+			document.getElementById('totalKm').textContent = totalKm.toFixed(1);
+			document.getElementById('totalTrips').textContent = totalTrips;
+			document.getElementById('avgKmPerDay').textContent = avgKmPerDay;
+			document.getElementById('co2Saved').textContent = co2Saved;
+
+		}
+
+
+		// Erweitere auch setupStadtradelnInputHelper um sicherzustellen, dass Routenbeschreibungen korrekt angezeigt werden
+		function setupStadtradelnInputHelper() {
+			bikeTrips = filteredTrips.filter(trip => trip.mode === 'biking');
+			
+			if (bikeTrips.length === 0) {
+				document.getElementById('stadtradelnInputHelper').style.display = 'none';
+				return;
+			}
+			
+			const container = document.getElementById('tripInputCards');
+			container.innerHTML = '';
+			
+			bikeTrips.forEach((trip, index) => {
+				const card = createTripInputCard(trip, index);
+				container.appendChild(card);
+			});
+			
+			currentTripIndex = 0;
+			updateTripNavigation();
+			showCurrentTrip();
+			document.getElementById('stadtradelnInputHelper').style.display = 'block';
+			
+			console.log(`📝 Stadtradeln Input Helper eingerichtet mit ${bikeTrips.length} Fahrradfahrten`);
+		}
+
+		// Erweitere auch die createTripInputCard Funktion um bessere Routenbeschreibung
+		function createTripInputCard(trip, index) {
+			const card = document.createElement('div');
+			card.className = 'trip-input-card';
+			card.id = `trip-card-${index}`;
+			
+			const km = (trip.distance / 1000).toFixed(1);
+			const date = trip.startTime.toLocaleDateString('de-DE');
+			const time = trip.startTime.toLocaleTimeString('de-DE', {hour: '2-digit', minute: '2-digit'});
+			const title = `Fahrradfahrt ${index + 1}`;
+			
+			// Verbesserte Routenbeschreibung - verwende trip.comment falls vorhanden
+			const routeDescription = trip.comment || `${title} - ${km} km`;
+			
+			card.innerHTML = `
+				<div class="trip-input-header">
+					<div class="trip-number">Fahrt ${index + 1}</div>
+					<div class="trip-mode-badge trip-mode-bike">🚴‍♂️ Fahrrad</div>
+				</div>
+				
+				<div class="input-fields-grid">
+					<div class="input-field">
+						<label class="input-label">Anzahl Fahrten*</label>
+						<input class="input-value" value="1" readonly onclick="copyToClipboard('1', this)" />
+					</div>
+					
+					<div class="input-field">
+						<label class="input-label">Kilometer gesamt*</label>
+						<input class="input-value" value="${km}" readonly onclick="copyToClipboard('${km}', this)" />
+					</div>
+					
+					<div class="input-field">
+						<label class="input-label">Datum*</label>
+						<input class="input-value" value="${date}" readonly onclick="copyToClipboard('${date}', this)" />
+					</div>
+					
+					<div class="input-field">
+						<label class="input-label">Uhrzeit</label>
+						<input class="input-value" value="${time}" readonly onclick="copyToClipboard('${time}', this)" />
+					</div>
+					
+					<div class="input-field">
+						<label class="input-label">Titel</label>
+						<input class="input-value" value="${title}" readonly onclick="copyToClipboard('${title}', this)" />
+					</div>
+				</div>
+				
+				<div class="route-description">
+					<label class="input-label">Route (Optional)</label>
+					<div class="route-text" onclick="copyToClipboard('${routeDescription.replace(/'/g, "\\'")}', this)">
+						${routeDescription}
+					</div>
+				</div>
+			`;
+			
+			return card;
+		}
+
+        function showCurrentTrip() {
+            document.querySelectorAll('.trip-input-card').forEach(card => {
+                card.style.display = 'none';
+                card.classList.remove('current');
+            });
+            
+            const currentCard = document.getElementById(`trip-card-${currentTripIndex}`);
+            if (currentCard) {
+                currentCard.style.display = 'block';
+                currentCard.classList.add('current');
+            }
+        }
+
+        function navigateTrip(direction) {
+            const newIndex = currentTripIndex + direction;
+            
+            if (newIndex >= 0 && newIndex < bikeTrips.length) {
+                currentTripIndex = newIndex;
+                showCurrentTrip();
+                updateTripNavigation();
+            }
+        }
+
+        function updateTripNavigation() {
+            const prevBtn = document.getElementById('prevTripBtn');
+            const nextBtn = document.getElementById('nextTripBtn');
+            const counter = document.getElementById('tripCounter');
+            
+            prevBtn.disabled = currentTripIndex === 0;
+            nextBtn.disabled = currentTripIndex === bikeTrips.length - 1;
+            
+            counter.textContent = `Fahrt ${currentTripIndex + 1} von ${bikeTrips.length}`;
+        }
+
+        function copyToClipboard(text, element) {
+            navigator.clipboard.writeText(text).then(() => {
+                showCopyNotification();
+                
+                const originalBg = element.style.background;
+                element.style.background = '#10b981';
+                element.style.borderColor = '#10b981';
+                
+                setTimeout(() => {
+                    element.style.background = originalBg;
+                    element.style.borderColor = '#1e4a5f';
+                }, 500);
+            });
+        }
+
+        function showCopyNotification() {
+            const notification = document.getElementById('copyNotification');
+            notification.classList.add('show');
+            
+            setTimeout(() => {
+                notification.classList.remove('show');
+            }, 2000);
+        }
+
+        function initializeChart() {
+            const ctx = document.getElementById('kmChart').getContext('2d');
+            
+            const labels = ['Tag 1', 'Tag 2', 'Tag 3', 'Tag 4', 'Tag 5', 'Tag 6', 'Tag 7'];
+            
+            kmChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: labels,
+                    datasets: [
+                        {
+                            label: '1. Woche',
+                            data: [0, 0, 0, 0, 0, 0, 0],
+                            fill: true,
+                            backgroundColor: 'rgba(193, 255, 0, 0.2)',
+                            borderColor: '#c1ff00',
+                            tension: 0.4,
+                            pointRadius: 4,
+                            pointBackgroundColor: '#c1ff00'
+                        },
+                        {
+                            label: '2. Woche',
+                            data: [0, 0, 0, 0, 0, 0, 0],
+                            fill: true,
+                            backgroundColor: 'rgba(30, 214, 255, 0.2)',
+                            borderColor: '#1ed6ff',
+                            tension: 0.4,
+                            pointRadius: 4,
+                            pointBackgroundColor: '#1ed6ff'
+                        },
+                        {
+                            label: '3. Woche',
+                            data: [0, 0, 0, 0, 0, 0, 0],
+                            fill: true,
+                            backgroundColor: 'rgba(162, 233, 0, 0.2)',
+                            borderColor: '#a2e900',
+                            tension: 0.4,
+                            pointRadius: 4,
+                            pointBackgroundColor: '#a2e900'
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false }
+                    },
+                    scales: {
+                        x: { 
+                            grid: { color: '#1e4a5f' },
+                            ticks: { color: '#b8cbd6' }
+                        },
+                        y: { 
+                            grid: { color: '#1e4a5f' },
+                            ticks: { color: '#b8cbd6' },
+                            beginAtZero: true,
+                            title: {
+                                display: true,
+                                text: 'km',
+                                color: '#b8cbd6'
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        function showCurrentPeriod() {
+            document.getElementById('tabCurrent').classList.add('active');
+            updateChartsWithRealData();
+        }
+
+		function updateDataTable() {
+			// Berechne die Wochen falls sie noch nicht berechnet wurden
+			if (!window.weeks || window.weeks.length === 0) {
+				calculateWeeks();
+			}
+			
+			const tableData = [];
+			
+			// Erstelle Tabellendaten für alle Wochen (VORWÄRTS sortiert)
+			window.weeks.forEach((week, index) => {
+				tableData.push({
+					period: `${index + 1}. Woche<br>${week.start.toLocaleDateString('de-DE', {day: '2-digit', month: '2-digit'})}. - ${week.end.toLocaleDateString('de-DE', {day: '2-digit', month: '2-digit', year: 'numeric'})}`, 
+					km: "0,0", 
+					co2: "0,0"
+				});
+			});
+
+			const tableHTML = tableData.map(row => `
+				<tr>
+					<td>${row.period}</td>
+					<td>${row.km}</td>
+					<td>${row.co2}</td>
+				</tr>
+			`).join('');
+
+			document.getElementById('dataTableBody').innerHTML = tableHTML;
+		}
+
+
+		function updateChartsWithRealData() {
+			const bikeTripsFiltered = filteredTrips.filter(trip => trip.mode === 'biking');
+			if (!window.weeks || window.weeks.length === 0) calculateWeeks();
+
+			const currentWeekIdx = getCurrentWeekIndex();
+			const showWeeks = currentWeekIdx >= 0 ? currentWeekIdx + 1 : 0;
+
+			const weeklyKm = {};
+			for (let i = 0; i < showWeeks; i++) {
+				weeklyKm[`week${i + 1}`] = [0, 0, 0, 0, 0, 0, 0];
+			}
+
+			bikeTripsFiltered.forEach(trip => {
+				const tripDate = new Date(trip.startTime);
+				for (let weekIndex = 0; weekIndex < showWeeks; weekIndex++) {
+					const week = window.weeks[weekIndex];
+					if (tripDate >= week.start && tripDate <= week.end) {
+						const dayIndex = Math.floor((tripDate - week.start) / (1000 * 60 * 60 * 24));
+						if (dayIndex >= 0 && dayIndex < 7) {
+							weeklyKm[`week${weekIndex + 1}`][dayIndex] += trip.distance / 1000;
+						}
+					}
+				}
+			});
+
+			if (kmChart && bikeTripsFiltered.length > 0) {
+				const colors = ['#c1ff00', '#1ed6ff', '#a2e900', '#ff6b6b', '#4ecdc4', '#45b7d1', '#96ceb4', '#feca57'];
+				const backgroundColors = [
+					'rgba(193, 255, 0, 0.2)', 'rgba(30, 214, 255, 0.2)', 'rgba(162, 233, 0, 0.2)',
+					'rgba(255, 107, 107, 0.2)', 'rgba(78, 205, 196, 0.2)', 'rgba(69, 183, 209, 0.2)',
+					'rgba(150, 206, 180, 0.2)', 'rgba(254, 202, 87, 0.2)'
+				];
+
+				kmChart.data.datasets = [];
+				for (let i = 0; i < showWeeks; i++) {
+					const week = window.weeks[i];
+					kmChart.data.datasets.push({
+						label: `${i + 1}. Woche (${week.start.toLocaleDateString('de-DE', {day: '2-digit', month: '2-digit'})}-${week.end.toLocaleDateString('de-DE', {day: '2-digit', month: '2-digit'})})`,
+						data: weeklyKm[`week${i + 1}`].map(km => km.toFixed(1)),
+						fill: true,
+						backgroundColor: backgroundColors[i % backgroundColors.length],
+						borderColor: colors[i % colors.length],
+						tension: 0.4,
+						pointRadius: 4,
+						pointBackgroundColor: colors[i % colors.length]
+					});
+				}
+				kmChart.update();
+			}
+		}
+
+
+		function updateDataTableWithRealData() {
+			const bikeTripsFiltered = filteredTrips.filter(trip => trip.mode === 'biking');
+			if (!window.weeks || window.weeks.length === 0) calculateWeeks();
+
+			const currentWeekIdx = getCurrentWeekIndex();
+			const showWeeks = currentWeekIdx >= 0 ? currentWeekIdx + 1 : 0;
+
+			const tableData = [];
+			for (let i = 0; i < showWeeks; i++) {
+				const week = window.weeks[i];
+				const weekKm = bikeTripsFiltered.filter(trip => {
+					const tripDate = new Date(trip.startTime);
+					return tripDate >= week.start && tripDate <= week.end;
+				}).reduce((sum, trip) => sum + trip.distance / 1000, 0);
+
+				tableData.push({
+					period: `${i + 1}. Woche<br>${week.start.toLocaleDateString('de-DE', {day: '2-digit', month: '2-digit'})}. - ${week.end.toLocaleDateString('de-DE', {day: '2-digit', month: '2-digit', year: 'numeric'})}`,
+					km: weekKm.toFixed(1),
+					co2: (weekKm * 0.17).toFixed(1)
+				});
+			}
+
+			document.getElementById('dataTableBody').innerHTML = tableData.map(row => `
+				<tr>
+					<td>${row.period}</td>
+					<td>${row.km}</td>
+					<td>${row.co2}</td>
+				</tr>
+			`).join('');
+		}
+
+
+        function displayTripsList() {
+            const tripsList = document.getElementById('tripsList');
+            tripsList.innerHTML = '';
+
+            filteredTrips.forEach((trip, index) => {
+                const tripCard = createTripCard(trip, index);
+                tripsList.appendChild(tripCard);
+            });
+        }
+
+        // Erweiterte Trip-Card Erstellung mit Zug-Unterstützung
+		function createTripCard(trip, index) {
+			const card = document.createElement('div');
+			card.className = `trip-card trip-${trip.mode}`;
+			card.id = `trip-${trip.id}`;
+
+			const modeIcons = {
+				biking: '🚴‍♂️',
+				walking: '🚶‍♂️',
+				vehicle: '🚗',
+				train: '🚂'
+			};
+
+			const modeNames = {
+				biking: 'Fahrrad',
+				walking: 'Zu Fuß',
+				vehicle: 'Auto',
+				train: 'Bahn'
+			};
+
+			// Fallback, falls trip.mode z. B. "bike" lautet
+			const safeMode = modeNames[trip.mode] ? trip.mode : 'biking';
+			const icon = modeIcons[safeMode];
+			const label = modeNames[safeMode];
+
+			const modifiedIndicator = trip.isModified ? '<span class="modified-indicator">Bearbeitet</span>' : '';
+
+			let routeDisplay = '';
+			if (trip.mode === 'train') {
+				const startAtRegensburg = isNearStation(trip.startLocation.lat, trip.startLocation.lon, TRAIN_STATIONS.regensburg);
+				const route = startAtRegensburg ?
+					`${TRAIN_STATIONS.regensburg.name} → ${TRAIN_STATIONS.freising.name}` :
+					`${TRAIN_STATIONS.freising.name} → ${TRAIN_STATIONS.regensburg.name}`;
+				routeDisplay = `<strong>Route:</strong> ${route}`;
+			} else if (trip.comment && trip.comment !== '') {
+				routeDisplay = `<strong>Route:</strong> ${trip.comment}`;
+			} else {
+				routeDisplay = '<span class="route-loading">🔄 Routenbeschreibung wird erstellt...</span>';
+			}
+
+			card.innerHTML = `
+				<div class="trip-header" onclick="toggleTripDetails(${index})">
+					<div class="trip-info">
+						<div class="trip-title">
+							${icon} ${label} - ${trip.startTime.toLocaleDateString('de-DE')}
+							${modifiedIndicator}
+						</div>
+						<div class="trip-details">
+							Uhrzeit: ${trip.startTime.toLocaleTimeString('de-DE', {hour: '2-digit', minute: '2-digit'})} - 
+							${trip.endTime.toLocaleTimeString('de-DE', {hour: '2-digit', minute: '2-digit'})}
+						</div>
+					</div>
+					<div class="trip-stats">
+						<span>📏 ${(trip.distance / 1000).toFixed(2)} km</span>
+						<span>⏱️ ${Math.round(trip.duration / 60)} min</span>
+						<span>🏃‍♂️ ${trip.avgSpeed.toFixed(1)} km/h</span>
+						<span>⚡ Max: ${trip.maxSpeed.toFixed(1)} km/h</span>
+					</div>
+					<div class="trip-controls">
+						<select class="mode-selector" id="mode-${trip.id}" onchange="updateTripMode('${trip.id}', this.value)" onclick="event.stopPropagation()">
+							<option value="biking" ${trip.mode === 'biking' ? 'selected' : ''}>🚴‍♂️ Fahrrad</option>
+							<option value="walking" ${trip.mode === 'walking' ? 'selected' : ''}>🚶‍♂️ Zu Fuß</option>
+							<option value="vehicle" ${trip.mode === 'vehicle' ? 'selected' : ''}>🚗 Auto</option>
+							<option value="train" ${trip.mode === 'train' ? 'selected' : ''}>🚂 Bahn</option>
+						</select>
+						<button class="save-btn" onclick="saveTripMode('${trip.id}'); event.stopPropagation();">💾 Speichern</button>
+						<button class="delete-btn" onclick="deleteTrip('${trip.id}'); event.stopPropagation();" style="background:#ef4444; color:#fff; border:none; padding:6px 12px; border-radius:6px; cursor:pointer; font-size:0.8rem; font-weight:500; margin-left:4px;">🗑️ Löschen</button>
+					</div>
+				</div>
+				<div class="trip-comment" id="comment-${trip.id}" style="display: ${trip.comment ? 'block' : 'none'}">
+					${routeDisplay}
+				</div>
+				<div class="map-container" id="tripMap${index}" style="display: none;"></div>
+			`;
+
+			return card;
+		}
+
+		function deleteTrip(tripId) {
+			const trip = filteredTrips.find(t => t.id == tripId);
+			if (!trip) {
+				alert('❌ Fahrt nicht gefunden!');
+				return;
+			}
+
+			// Sicherheitsabfrage
+			const confirmDelete = confirm(
+				`🗑️ Fahrt wirklich löschen?\n\n` +
+				`${trip.mode === 'biking' ? '🚴‍♂️ Fahrrad' : 
+				  trip.mode === 'walking' ? '🚶‍♂️ Zu Fuß' : 
+				  trip.mode === 'vehicle' ? '🚗 Auto' : '🚂 Bahn'}\n` +
+				`📅 ${trip.startTime.toLocaleDateString('de-DE')}\n` +
+				`📏 ${(trip.distance / 1000).toFixed(2)} km\n` +
+				`⏱️ ${Math.round(trip.duration / 60)} min\n\n` +
+				`Diese Aktion kann nicht rückgängig gemacht werden!`
+			);
+
+			if (!confirmDelete) {
+				return;
+			}
+
+			// Aus beiden Arrays entfernen
+			const allTripsIndex = allTrips.findIndex(t => t.id == tripId);
+			if (allTripsIndex !== -1) {
+				allTrips.splice(allTripsIndex, 1);
+			}
+
+			const filteredTripsIndex = filteredTrips.findIndex(t => t.id == tripId);
+			if (filteredTripsIndex !== -1) {
+				filteredTrips.splice(filteredTripsIndex, 1);
+			}
+
+			// UI aktualisieren
+			refreshUIAfterDelete();
+			
+			console.log(`🗑️ Fahrt ${tripId} erfolgreich gelöscht`);
+			
+			// Erfolgsmeldung anzeigen
+			showDeleteNotification();
+		}
+
+		function refreshUIAfterDelete() {
+			// Statistiken aktualisieren
+			updateStatistics();
+			
+			// Fahrten-Liste neu aufbauen
+			displayTripsList();
+			
+			// Karte aktualisieren
+			if (map && filteredTrips.length > 0) {
+				updateMap();
+			} else if (filteredTrips.length === 0) {
+				// Karte ausblenden wenn keine Fahrten mehr vorhanden
+				document.getElementById('mapContainer').style.display = 'none';
+			}
+			
+			// Charts aktualisieren
+			updateChartsWithRealData();
+			updateDataTableWithRealData();
+			
+			// Stadtradeln Input Helper aktualisieren
+			setupStadtradelnInputHelper();
+			
+			// Wenn keine Fahrten mehr vorhanden, entsprechende Bereiche ausblenden
+			if (filteredTrips.length === 0) {
+				document.getElementById('tripsSection').style.display = 'none';
+				document.getElementById('stadtradelnInputHelper').style.display = 'none';
+				document.getElementById('exportSection').style.display = 'none';
+			}
+		}
+
+		function showDeleteNotification() {
+			// Erstelle Benachrichtigung wenn sie nicht existiert
+			let deleteNotification = document.getElementById('deleteNotification');
+			if (!deleteNotification) {
+				deleteNotification = document.createElement('div');
+				deleteNotification.id = 'deleteNotification';
+				deleteNotification.className = 'copy-notification';
+				deleteNotification.style.background = '#ef4444';
+				deleteNotification.innerHTML = '🗑️ Fahrt gelöscht!';
+				document.body.appendChild(deleteNotification);
+			}
+			
+			deleteNotification.classList.add('show');
+			
+			setTimeout(() => {
+				deleteNotification.classList.remove('show');
+			}, 2000);
+		}
+
+
+		function startTripEditingInline(tripId, tripIndex) {
+			const trip = filteredTrips.find(t => t.id === tripId);
+			
+			if (!trip || !trip.points || trip.points.length < 2) {
+				alert("❌ Keine brauchbare Strecke vorhanden.");
+				return;
+			}
+			
+			// Zeige die Karte für diesen Trip
+			const mapContainer = document.getElementById(`tripMap${tripIndex}`);
+			if (mapContainer.style.display === 'none') {
+				toggleTripDetails(tripIndex);
+			}
+			
+			// Aktiviere Bearbeitungsmodus
+			enableEditingMode(tripId, tripIndex);
+		}
+
+		function enableEditingMode(tripId, tripIndex) {
+			const trip = filteredTrips.find(t => t.id === tripId);
+			const mapId = `tripMap${tripIndex}`;
+			
+			// Entferne alte Map-Instanz
+			if (window.leafletTripMaps && window.leafletTripMaps[mapId]) {
+				window.leafletTripMaps[mapId].remove();
+				delete window.leafletTripMaps[mapId];
+			}
+			
+			// Erstelle neue Map mit Bearbeitungsmodus
+			const container = document.getElementById(mapId);
+			container.innerHTML = '';
+			
+			const tripMap = L.map(mapId).setView([trip.startLocation.lat, trip.startLocation.lon], 14);
+			window.leafletTripMaps[mapId] = tripMap;
+			
+			L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+				attribution: '© OpenStreetMap contributors'
+			}).addTo(tripMap);
+			
+			// Zeichne Strecke
+			const latlngs = trip.points.map(p => [p.lat, p.lon]);
+			const polyline = L.polyline(latlngs, { color: '#3b82f6', weight: 4 }).addTo(tripMap);
+			tripMap.fitBounds(polyline.getBounds().pad(0.1));
+			
+			// Füge klickbare Punkte hinzu
+			let clickStart = null;
+			trip.points.forEach((pt, idx) => {
+				L.circleMarker([pt.lat, pt.lon], {
+					radius: 6,
+					color: '#fff',
+					fillColor: '#ff6b6b',
+					fillOpacity: 0.9,
+					weight: 2
+				}).addTo(tripMap).on('click', () => {
+					handleSegmentSelection(tripId, idx, clickStart, (newStart) => {
+						clickStart = newStart;
+					});
+				});
+			});
+			
+			// Zeige Bearbeitungshinweis
+			showEditingHint(tripIndex);
+		}
+
+		function handleSegmentSelection(tripId, pointIndex, currentStart, setStart) {
+			const trip = filteredTrips.find(t => t.id === tripId);
+			
+			if (currentStart === null) {
+				setStart(pointIndex);
+				alert(`📍 Startpunkt gesetzt bei Punkt ${pointIndex + 1}. Wähle jetzt den Endpunkt.`);
+				return;
+			}
+			
+			const start = Math.min(currentStart, pointIndex);
+			const end = Math.max(currentStart, pointIndex);
+			
+			if (start === end) {
+				alert("❌ Du musst zwei verschiedene Punkte auswählen!");
+				setStart(null);
+				return;
+			}
+			
+			const mode = prompt("🚲 Transportmittel wählen:\n- bike (Fahrrad)\n- walk (Zu Fuß)\n- car (Auto)\n- train (Bahn)", "bike");
+			
+			const modeMap = {
+				bike: 'biking',
+				walk: 'walking', 
+				car: 'vehicle',
+				train: 'train'
+			};
+			
+			if (!modeMap[mode]) {
+				alert("❌ Ungültiges Transportmittel!");
+				setStart(null);
+				return;
+			}
+			
+			// Erstelle neues Segment
+			const newPoints = trip.points.slice(start, end + 1);
+			const newTrip = analyzeTrip(newPoints);
+			newTrip.mode = modeMap[mode];
+			newTrip.originalMode = modeMap[mode];
+			newTrip.isModified = true;
+			newTrip.comment = `[Manuell] Segment ${start + 1}-${end + 1} aus Trip ${tripId}`;
+			
+			// Zu allTrips hinzufügen und Filter neu anwenden
+			allTrips.push(newTrip);
+			applyFilters();
+			
+			alert(`✅ Neues ${mode}-Segment erstellt: ${(newTrip.distance/1000).toFixed(1)} km`);
+			setStart(null);
+		}
+
+		function showEditingHint(tripIndex) {
+			const container = document.getElementById(`tripMap${tripIndex}`);
+			const hint = document.createElement('div');
+			hint.style.cssText = `
+				position: absolute;
+				top: 10px;
+				left: 10px;
+				background: rgba(255, 193, 7, 0.9);
+				padding: 8px 12px;
+				border-radius: 6px;
+				font-size: 12px;
+				font-weight: bold;
+				z-index: 1000;
+				color: #000;
+			`;
+			hint.innerHTML = '✂️ Bearbeitungsmodus: Klicke zwei Punkte für ein Segment';
+			container.appendChild(hint);
+		}
+
+
+		function startTripEditing(tripId, tripIndex) {
+			// VORHER:
+			const trip = filteredTrips.find(t => t.id === tripId);
+			
+			// NACHHER:
+			// const trip = allTrips.find(t => t.id === tripId);
+			
+			if (!trip || !trip.points || trip.points.length < 2) {
+				alert("❌ Keine brauchbare Strecke vorhanden.");
+				return;
+			}
+
+			const mapId = `tripMap${tripIndex}`;
+			const container = document.getElementById(mapId);
+			if (!container) return;
+
+			// Leaflet Fehlervermeidung: Map mehrfach öffnen fix
+			if (container._leaflet_map) {
+				container._leaflet_map.remove();
+				delete container._leaflet_map;
+			}
+
+			container.innerHTML = '';
+			container.style.display = 'block';
+
+			const map = L.map(mapId).setView([trip.startLocation.lat, trip.startLocation.lon], 14);
+			container._leaflet_map = map;
+
+			L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+				attribution: '© OpenStreetMap contributors'
+			}).addTo(map);
+
+			const latlngs = trip.points.map(p => [p.lat, p.lon]);
+			const polyline = L.polyline(latlngs, { color: '#3b82f6', weight: 4 }).addTo(map);
+			map.fitBounds(polyline.getBounds().pad(0.1));
+
+			let clickStart = null;
+			trip.points.forEach((pt, idx) => {
+				L.circleMarker([pt.lat, pt.lon], {
+					radius: 4,
+					color: '#fff',
+					fillColor: '#0ea5e9',
+					fillOpacity: 0.9,
+					weight: 1
+				}).addTo(map).on('click', () => {
+					if (clickStart === null) {
+						clickStart = idx;
+						alert(`📍 Startpunkt gesetzt bei Punkt ${idx}`);
+					} else {
+						const start = Math.min(clickStart, idx);
+						const end = Math.max(clickStart, idx);
+						clickStart = null;
+
+						const mode = prompt("🚲 Modus: bike, walk, car, train", "bike");
+						const modeMap = { bike: 'biking', walk: 'walking', car: 'vehicle', train: 'train' };
+						if (!modeMap[mode]) {
+							alert("❌ Ungültiger Modus.");
+							return;
+						}
+
+						const newPoints = trip.points.slice(start, end + 1);
+						if (newPoints.length < 2) {
+							alert("❌ Segment zu kurz (min. 2 Punkte).");
+							return;
+						}
+
+						const newTrip = analyzeTrip(newPoints);
+						newTrip.mode = modeMap[mode];
+						newTrip.originalMode = newTrip.mode;
+						newTrip.isModified = true;
+						newTrip.comment = `[Manuell] Abschnitt ${start + 1}–${end + 1}`;
+						newTrip.points = newPoints;
+						newTrip.startTime = newPoints[0].time;
+						newTrip.endTime = newPoints[newPoints.length - 1].time;
+						newTrip.startLocation = { lat: newPoints[0].lat, lon: newPoints[0].lon };
+						newTrip.endLocation = { lat: newPoints[newPoints.length - 1].lat, lon: newPoints[newPoints.length - 1].lon };
+ 
+						// 🔍 DEBUG-CODE HIER EINFÜGEN:
+						console.log('Neues Segment erstellt:', newTrip);
+						console.log('Anzahl allTrips vor Speicherung:', allTrips.length);
+						
+						allTrips.push(newTrip);
+						applyFilters();
+						
+						// 🔍 DEBUG-CODE HIER EINFÜGEN:
+						console.log('Anzahl filteredTrips nach applyFilters:', filteredTrips.length);
+
+					}
+				});
+			});
+		}
+
+
+
+
+		function exitEditMode() {
+		  document.getElementById('editStatus').style.display = 'none';
+		  // Map ggf. zurücksetzen oder alle Trips erneut anzeigen
+		  updateMap();
+		}
+
+
+        function updateTripMode(tripId, newMode) {
+            const trip = filteredTrips.find(t => t.id == tripId);
+            if (trip) {
+                trip.mode = newMode;
+                trip.isModified = true;
+                
+                const card = document.getElementById(`trip-${tripId}`);
+                card.className = `trip-card trip-${newMode}`;
+                
+                console.log(`✏️ Trip ${tripId} geändert zu: ${newMode}`);
+            }
+        }
+
+        function saveTripMode(tripId) {
+            const trip = filteredTrips.find(t => t.id == tripId);
+            if (trip) {
+                updateStatistics();
+                updateMap();
+                updateChartsWithRealData();
+                updateDataTableWithRealData();
+                setupStadtradelnInputHelper();
+                
+                console.log(`💾 Trip ${tripId} gespeichert als: ${trip.mode}`);
+                
+                const button = event.target;
+                const originalText = button.textContent;
+                button.textContent = '✅ Gespeichert!';
+                button.style.background = '#22c55e';
+                
+                setTimeout(() => {
+                    button.textContent = originalText;
+                    button.style.background = '#10b981';
+                }, 1500);
+            }
+        }
+
+		function generateStadtradelnExport() {
+			const bikeTripsFiltered = filteredTrips.filter(trip => trip.mode === 'biking');
+			
+			if (bikeTripsFiltered.length === 0) {
+				alert('Keine Fahrradfahrten gefunden!');
+				return;
+			}
+
+			const exportDiv = document.getElementById('stadtradelnExport');
+			const contentDiv = document.getElementById('exportContent');
+			
+			let exportHTML = '';
+			let totalKm = 0;
+
+			bikeTripsFiltered.forEach((trip, index) => {
+				const km = (trip.distance / 1000).toFixed(1);
+				totalKm += parseFloat(km);
+				
+				const date = trip.startTime.toLocaleDateString('de-DE');
+				const startTime = trip.startTime.toLocaleTimeString('de-DE', {hour: '2-digit', minute: '2-digit'});
+				const endTime = trip.endTime.toLocaleTimeString('de-DE', {hour: '2-digit', minute: '2-digit'});
+				const duration = Math.round(trip.duration / 60);
+				
+				const comment = trip.comment || `Fahrradfahrt ${index + 1}`;
+				
+				exportHTML += `
+					<div class="stadtradeln-entry">
+						<strong>📅 ${date} | 🚴‍♂️ ${km} km | ⏱️ ${duration} min</strong><br>
+						<strong>🕐 ${startTime} - ${endTime}</strong><br>
+						<strong>📍 Route:</strong> ${comment}<br>
+						<strong>🏃‍♂️ Ø-Geschwindigkeit:</strong> ${trip.avgSpeed.toFixed(1)} km/h
+						<button class="copy-btn" onclick="copyToClipboard('${date} - ${km} km - ${comment}')">📋 Kopieren</button>
+					</div>
+				`;
+			});
+
+			exportHTML = `
+				<div style="background: #e8f5e8; padding: 15px; border-radius: 8px; margin-bottom: 20px;">
+					<h4 style="margin: 0; color: #2E8B57;">🏆 Gesamtübersicht</h4>
+					<p style="margin: 5px 0;"><strong>Gesamte Fahrradkilometer:</strong> ${totalKm.toFixed(1)} km</p>
+					<p style="margin: 5px 0;"><strong>Anzahl Fahrten:</strong> ${bikeTripsFiltered.length}</p>
+					<p style="margin: 5px 0;"><strong>Zeitraum:</strong> ${document.getElementById('stadtradelnStart').value} bis ${document.getElementById('stadtradelnEnd').value}</p>
+					<button class="copy-btn" onclick="copyAllBikeTrips()" style="background: #2E8B57; color: white; padding: 10px 20px; font-size: 14px;">📋 Alle Fahrten kopieren</button>
+				</div>
+			` + exportHTML;
+
+			contentDiv.innerHTML = exportHTML;
+			exportDiv.style.display = 'block';
+			
+			console.log(`📤 Export generiert: ${bikeTripsFiltered.length} Fahrten, ${totalKm.toFixed(1)} km`);
+		}
+
+
+        function copyAllBikeTrips() {
+            const bikeTripsFiltered = filteredTrips.filter(trip => trip.mode === 'biking');
+            let allTripsText = `Fahrradfahrten (${bikeTripsFiltered.length} Fahrten, ${(bikeTripsFiltered.reduce((sum, trip) => sum + trip.distance, 0) / 1000).toFixed(1)} km)\n\n`;
+            
+            bikeTripsFiltered.forEach((trip, index) => {
+                const km = (trip.distance / 1000).toFixed(1);
+                const date = trip.startTime.toLocaleDateString('de-DE');
+                const startTime = trip.startTime.toLocaleTimeString('de-DE', {hour: '2-digit', minute: '2-digit'});
+                const endTime = trip.endTime.toLocaleTimeString('de-DE', {hour: '2-digit', minute: '2-digit'});
+                const comment = trip.comment || `Fahrradfahrt ${index + 1}`;
+                
+                allTripsText += `${date} | ${km} km | ${startTime}-${endTime} | ${comment}\n`;
+            });
+            
+            navigator.clipboard.writeText(allTripsText).then(() => {
+                console.log('📋 Alle Fahrradfahrten in Zwischenablage kopiert');
+                event.target.style.background = '#28a745';
+                event.target.textContent = '✅ Kopiert!';
+                setTimeout(() => {
+                    event.target.style.background = '#2E8B57';
+                    event.target.textContent = '📋 Alle Fahrten kopieren';
+                }, 2000);
+            });
+        }
+
+        function saveData() {
+            const dataToSave = {
+                trips: allTrips,
+                outlierStats: outlierStats,
+                timestamp: new Date().toISOString(),
+                version: '1.0'
+            };
+            
+            const dataStr = JSON.stringify(dataToSave, null, 2);
+            const dataBlob = new Blob([dataStr], {type: 'application/json'});
+            
+            const link = document.createElement('a');
+            link.href = URL.createObjectURL(dataBlob);
+            link.download = `gps-tracker-daten-${new Date().toISOString().split('T')[0]}.json`;
+            link.click();
+            
+            console.log('💾 Daten gespeichert');
+        }
+
+        function loadData() {
+            document.getElementById('loadDataFile').click();
+        }
+
+        function handleLoadData(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const data = JSON.parse(e.target.result);
+                    
+                    if (data.trips && Array.isArray(data.trips)) {
+                        allTrips = data.trips.map(trip => ({
+                            ...trip,
+                            startTime: new Date(trip.startTime),
+                            endTime: new Date(trip.endTime)
+                        }));
+                        
+                        if (data.outlierStats) {
+                            outlierStats = data.outlierStats;
+                        }
+                        
+                        applyFilters();
+                        displayResults();
+                        initializeMap();
+                        
+                        document.getElementById('filterSection').style.display = 'block';
+                        document.getElementById('dashboardGrid').style.display = 'grid';
+                        document.getElementById('tripsSection').style.display = 'block';
+                        document.getElementById('outlierStats').style.display = 'block';
+                        document.getElementById('exportSection').style.display = 'block';
+                        document.getElementById('routeDescriptionSection').style.display = 'block';
+                        
+                        displayOutlierStats();
+                        
+                        console.log('📂 Daten erfolgreich geladen:', allTrips.length, 'Fahrten');
+                    } else {
+                        alert('Ungültiges Datenformat!');
+                    }
+                } catch (error) {
+                    console.error('Fehler beim Laden der Daten:', error);
+                    alert('Fehler beim Laden der Datei!');
+                }
+            };
+            reader.readAsText(file);
+        }
+
+		function initializeMap() {
+			// Prüfe ob gefilterte Trips vorhanden sind
+			if (filteredTrips.length === 0) {
+				console.log('🗺️ Keine gefilterten Trips für Karte vorhanden');
+				document.getElementById('mapContainer').style.display = 'none';
+				return;
+			}
+
+			const mapContainer = document.getElementById('mapContainer');
+			mapContainer.style.display = 'block';
+
+			// Entferne bestehende Karte falls vorhanden
+			if (map) {
+				map.remove();
+				map = null;
+			}
+
+			// Berechne Zentrum basierend auf gefilterten Trips
+			const allPoints = filteredTrips.flatMap(trip => trip.points);
+			if (allPoints.length === 0) {
+				console.log('🗺️ Keine GPS-Punkte in gefilterten Trips');
+				return;
+			}
+
+			const centerLat = allPoints.reduce((sum, point) => sum + point.lat, 0) / allPoints.length;
+			const centerLon = allPoints.reduce((sum, point) => sum + point.lon, 0) / allPoints.length;
+
+			console.log(`🗺️ Initialisiere Karte mit ${filteredTrips.length} gefilterten Fahrten`);
+
+			map = L.map('map').setView([centerLat, centerLon], 12);
+
+			L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+				attribution: '© OpenStreetMap contributors'
+			}).addTo(map);
+
+			// Sofort die gefilterten Trips anzeigen
+			updateMap();
+		}
+
+		function updateMap() {
+		  if (!map) {
+			console.log('🗺️ Karte nicht initialisiert - initialisiere neu');
+			initializeMap();
+			return;
+		  }
+
+		  // Bestehende Layer von vorherigen Trips entfernen
+		  currentTripLayers.forEach(layer => {
+			try {
+			  map.removeLayer(layer);
+			} catch (e) {}
+		  });
+		  currentTripLayers = [];
+
+		  if (filteredTrips.length === 0) {
+			console.log('🗺️ Keine gefilterten Trips zum Anzeigen');
+			return;
+		  }
+
+		  console.log(`🗺️ Zeige ${filteredTrips.length} gefilterte Fahrten auf Karte`);
+
+		  const colors = {
+			biking: '#c1ff00',
+			walking: '#1ed6ff',
+			vehicle: '#64748b',
+			train: '#ff6b6b'
+		  };
+
+		  filteredTrips.forEach((trip, index) => {
+			try {
+			  const coordinates = trip.points.map(p => [p.lat, p.lon]);
+
+			  // Linie zeichnen
+			  const polyline = L.polyline(coordinates, {
+				color: colors[trip.mode],
+				weight: trip.isModified ? 6 : 4,
+				opacity: 0.8,
+				dashArray: trip.isModified ? '10, 5' : null
+			  }).addTo(map);
+			  currentTripLayers.push(polyline);
+
+			  // Marker für jeden Punkt für manuelles Segmentieren
+			  trip.points.forEach((pt, i) => {
+				const marker = L.circleMarker([pt.lat, pt.lon], {
+				  radius: 4,
+				  color: '#fff',
+				  fillColor: '#0ea5e9',
+				  fillOpacity: 0.9,
+				  weight: 1
+				}).on('click', () => {
+				  handleManualSegmentClick(trip.id, i);
+				}).addTo(map);
+				currentTripLayers.push(marker);
+			  });
+
+			  // Startmarker
+			  const startMarker = L.circleMarker([trip.startLocation.lat, trip.startLocation.lon], {
+				radius: trip.isModified ? 8 : 6,
+				fillColor: colors[trip.mode],
+				color: trip.isModified ? '#ffc107' : 'white',
+				weight: 2,
+				opacity: 1,
+				fillOpacity: 0.8
+			  }).addTo(map);
+
+			  // Endmarker
+			  const endMarker = L.circleMarker([trip.endLocation.lat, trip.endLocation.lon], {
+				radius: trip.isModified ? 8 : 6,
+				fillColor: colors[trip.mode],
+				color: trip.isModified ? '#ffc107' : 'black',
+				weight: 2,
+				opacity: 1,
+				fillOpacity: 0.8
+			  }).addTo(map);
+
+			  currentTripLayers.push(startMarker, endMarker);
+
+			  // Popup-Info
+			  const modeIcon = trip.mode === 'biking' ? '🚴‍♂️' :
+							   trip.mode === 'walking' ? '🚶‍♂️' :
+							   trip.mode === 'train' ? '🚂' : '🚗';
+			  const modeName = trip.mode === 'biking' ? 'Fahrrad' :
+							   trip.mode === 'walking' ? 'Zu Fuß' :
+							   trip.mode === 'train' ? 'Bahn' : 'Auto';
+
+			  const modifiedText = trip.isModified ? '<br><strong style="color: #ffc107;">⚠️ Manuell bearbeitet</strong>' : '';
+
+			  const popupContent = `
+				<strong>${modeIcon} ${modeName}</strong>${modifiedText}<br>
+				📅 ${trip.startTime.toLocaleDateString('de-DE')}<br>
+				⏰ ${trip.startTime.toLocaleTimeString('de-DE', {hour: '2-digit', minute: '2-digit'})} - 
+				${trip.endTime.toLocaleTimeString('de-DE', {hour: '2-digit', minute: '2-digit'})}<br>
+				📏 ${(trip.distance / 1000).toFixed(2)} km<br>
+				⏱️ ${Math.round(trip.duration / 60)} min<br>
+				🏃‍♂️ ⌀ ${trip.avgSpeed.toFixed(1)} km/h<br>
+				⚡ Max: ${trip.maxSpeed.toFixed(1)} km/h
+			  `;
+
+			  polyline.bindPopup(popupContent);
+
+			} catch (error) {
+			  console.error(`Fehler beim Anzeigen von Trip ${index}:`, error);
+			}
+		  });
+
+		  // Ansicht auf alle Layer anpassen
+		  if (currentTripLayers.length > 0) {
+			try {
+			  const group = new L.featureGroup(currentTripLayers);
+			  map.fitBounds(group.getBounds().pad(0.1));
+			} catch (error) {
+			  console.error('Fehler beim Anpassen der Karten-Bounds:', error);
+			}
+		  }
+		}
+
+
+		function showTripOnMap(trip, containerId) {
+			// Alte Map-Instanz entfernen, wenn vorhanden
+			if (window.leafletTripMaps === undefined) window.leafletTripMaps = {};
+
+			// Wenn für diese Card schon eine Instanz existiert: destroy!
+			if (window.leafletTripMaps[containerId]) {
+				window.leafletTripMaps[containerId].remove();
+				delete window.leafletTripMaps[containerId];
+			}
+
+			// Das Container-DIV leeren (Leaflet verlangt leere Fläche)
+			const container = document.getElementById(containerId);
+			if (!container) return;
+			container.innerHTML = '';
+
+			// Neue Map erzeugen
+			const tripMap = L.map(containerId).setView([trip.startLocation.lat, trip.startLocation.lon], 14);
+			window.leafletTripMaps[containerId] = tripMap;
+
+			L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+				attribution: '© OpenStreetMap contributors'
+			}).addTo(tripMap);
+
+			const coordinates = trip.points.map(point => [point.lat, point.lon]);
+			const colors = {
+				biking: '#c1ff00',
+				walking: '#1ed6ff',
+				vehicle: '#64748b',
+				train: '#ff6b6b'
+			};
+
+			if (coordinates.length > 1) {
+				const polyline = L.polyline(coordinates, {
+					color: colors[trip.mode] || '#3b82f6',
+					weight: 4,
+					opacity: 0.8
+				}).addTo(tripMap);
+				tripMap.fitBounds(polyline.getBounds().pad(0.1));
+			} else if (coordinates.length === 1) {
+				tripMap.setView(coordinates[0], 15);
+			}
+
+			// ✅ NEUE FUNKTION: Klickbare Punkte für Bearbeitung hinzufügen
+			trip.points.forEach((pt, i) => {
+				const marker = L.circleMarker([pt.lat, pt.lon], {
+					radius: 4,
+					color: '#fff',
+					fillColor: '#0ea5e9',
+					fillOpacity: 0.9,
+					weight: 1
+				}).on('click', () => {
+					handleManualSegmentClick(trip.id, i);
+				}).addTo(tripMap);
+			});
+
+			// Start- und Endmarker
+			L.circleMarker([trip.startLocation.lat, trip.startLocation.lon], {
+				radius: 7,
+				fillColor: colors[trip.mode] || '#3b82f6',
+				color: "#fff",
+				weight: 2,
+				fillOpacity: 0.95
+			}).addTo(tripMap);
+
+			L.circleMarker([trip.endLocation.lat, trip.endLocation.lon], {
+				radius: 7,
+				fillColor: colors[trip.mode] || '#3b82f6',
+				color: "#000",
+				weight: 2,
+				fillOpacity: 0.95
+			}).addTo(tripMap);
+		}
+
+
+
+        function toggleTripDetails(tripIndex) {
+            const mapContainer = document.getElementById(`tripMap${tripIndex}`);
+            
+            if (mapContainer.style.display === 'none' || !mapContainer.style.display) {
+                mapContainer.style.display = 'block';
+                showTripOnMap(filteredTrips[tripIndex], `tripMap${tripIndex}`);
+            } else {
+                mapContainer.style.display = 'none';
+            }
+        }
+
+        // Optionale Routenbeschreibung starten
+        function startRouteDescriptionGeneration() {
+            const button = document.getElementById('startRouteDescriptionBtn');
+            button.disabled = true;
+            button.textContent = '🔄 Wird gestartet...';
+            
+            setTimeout(() => {
+                generateAllRouteDescriptions();
+            }, 500);
+        }
+
+		// Erweiterte Routenbeschreibung nur für gefilterte Trips
+		async function generateAllRouteDescriptions() {
+			if (routeDescriptionProgress.isProcessing) return;
+			
+			// Verwende nur gefilterte Trips anstatt allTrips
+			const tripsToProcess = filteredTrips.filter(trip => !trip.comment || trip.comment === '');
+			
+			if (tripsToProcess.length === 0) {
+				alert('Alle gefilterten Fahrten haben bereits Routenbeschreibungen!');
+				return;
+			}
+			
+			routeDescriptionProgress.isProcessing = true;
+			routeDescriptionProgress.total = tripsToProcess.length;
+			routeDescriptionProgress.processed = 0;
+			
+			showRouteDescriptionStatus();
+			
+			for (let i = 0; i < tripsToProcess.length; i++) {
+				const trip = tripsToProcess[i];
+				
+				try {
+					if (i > 0) {
+						await new Promise(resolve => setTimeout(resolve, 1000));
+					}
+					
+					const description = await generateRouteDescription(trip);
+					trip.comment = description;
+					
+					updateTripComment(trip.id, description);
+					
+				} catch (error) {
+					console.log(`Fehler bei Routenbeschreibung für Trip ${trip.id}:`, error);
+					trip.comment = `Fahrt am ${trip.startTime.toLocaleDateString('de-DE')}`;
+				}
+				
+				routeDescriptionProgress.processed++;
+				updateRouteDescriptionStatus();
+			}
+			
+			routeDescriptionProgress.isProcessing = false;
+			hideRouteDescriptionStatus();
+			
+			displayTripsList();
+			
+			// Aktualisiere auch den Stadtradeln Input Helper
+			updateStadtradelnInputHelperRoutes();
+			
+			console.log(`✅ Routenbeschreibungen für ${tripsToProcess.length} gefilterte Fahrten erstellt`);
+		}
+
+
+		// Neue Funktion: Aktualisiere Routenbeschreibungen im Stadtradeln Input Helper
+		function updateStadtradelnInputHelperRoutes() {
+			// Prüfe ob der Stadtradeln Input Helper sichtbar ist
+			const inputHelper = document.getElementById('stadtradelnInputHelper');
+			if (!inputHelper || inputHelper.style.display === 'none') {
+				return;
+			}
+			
+			// Filtere nur Fahrradfahrten
+			const bikeTripsFiltered = filteredTrips.filter(trip => trip.mode === 'biking');
+			
+			// Aktualisiere jede Trip-Karte im Input Helper
+			bikeTripsFiltered.forEach((trip, index) => {
+				const tripCard = document.getElementById(`trip-card-${index}`);
+				if (tripCard) {
+					const routeTextElement = tripCard.querySelector('.route-text');
+					if (routeTextElement && trip.comment) {
+						// Aktualisiere den Text und das onclick-Attribut
+						const newRouteText = trip.comment;
+						routeTextElement.textContent = newRouteText;
+						routeTextElement.setAttribute('onclick', `copyToClipboard('${newRouteText.replace(/'/g, "\\'")}', this)`);
+						
+						console.log(`📝 Routenbeschreibung für Fahrt ${index + 1} aktualisiert: ${newRouteText}`);
+					}
+				}
+			});
+			
+			console.log('✅ Stadtradeln Input Helper Routenbeschreibungen aktualisiert');
+		}
+
+		function showRouteDescriptionStatus() {
+			const statusElement = document.getElementById('routeDescriptionStatus');
+			if (statusElement) {
+				statusElement.innerHTML = `
+					<div style="margin-bottom: 10px;">
+						<strong>🔄 Routenbeschreibungen werden erstellt...</strong>
+					</div>
+					<div class="route-progress-bar">
+						<div id="routeProgressBar" class="route-progress-fill"></div>
+					</div>
+					<div style="margin-top: 8px; font-size: 0.9rem; color: #b8cbd6;">
+						<span id="routeProgressText">0 / 0 bearbeitet</span>
+					</div>
+				`;
+				statusElement.style.display = 'block';
+			}
+		}
+
+
+        function updateRouteDescriptionStatus() {
+            const progressBar = document.getElementById('routeProgressBar');
+            const progressText = document.getElementById('routeProgressText');
+            
+            if (progressBar && progressText) {
+                const percentage = (routeDescriptionProgress.processed / routeDescriptionProgress.total) * 100;
+                progressBar.style.width = percentage + '%';
+                progressText.textContent = `${routeDescriptionProgress.processed} / ${routeDescriptionProgress.total} bearbeitet`;
+            }
+        }
+
+        function hideRouteDescriptionStatus() {
+            const statusElement = document.getElementById('routeDescriptionStatus');
+            if (statusElement) {
+                setTimeout(() => {
+                    statusElement.style.display = 'none';
+                }, 2000);
+            }
+        }
+
+        function updateTripComment(tripId, comment) {
+            const commentDiv = document.getElementById(`comment-${tripId}`);
+            if (commentDiv) {
+                commentDiv.innerHTML = `<strong>Route:</strong> ${comment}`;
+                commentDiv.style.display = 'block';
+            }
+        }
+
+        async function generateRouteDescription(trip) {
+            try {
+                const startName = await getLocationName(trip.startLocation.lat, trip.startLocation.lon);
+                const endName = await getLocationName(trip.endLocation.lat, trip.endLocation.lon);
+                
+                return `Von ${startName} nach ${endName}`;
+            } catch (error) {
+                console.log('Fehler bei Routenbeschreibung:', error);
+                return `Fahrt am ${trip.startTime.toLocaleDateString('de-DE')}`;
+            }
+        }
+
+        async function getLocationName(lat, lon) {
+            try {
+                const response = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lon}&zoom=16&addressdetails=1`);
+                const data = await response.json();
+                
+                if (data && data.address) {
+                    const addr = data.address;
+                    let locationName = '';
+                    
+                    if (addr.road) {
+                        locationName = addr.road;
+                        if (addr.house_number) {
+                            locationName += ' ' + addr.house_number;
+                        }
+                    } else if (addr.pedestrian || addr.footway || addr.cycleway) {
+                        locationName = addr.pedestrian || addr.footway || addr.cycleway;
+                    } else if (addr.suburb || addr.neighbourhood) {
+                        locationName = addr.suburb || addr.neighbourhood;
+                    } else if (addr.city_district) {
+                        locationName = addr.city_district;
+                    }
+                    
+                    if (addr.city || addr.town || addr.village) {
+                        if (locationName) {
+                            locationName += ', ' + (addr.city || addr.town || addr.village);
+                        } else {
+                            locationName = addr.city || addr.town || addr.village;
+                        }
+                    }
+                    
+                    return locationName || 'Unbekannter Ort';
+                }
+            } catch (error) {
+                console.log('Geocoding-Fehler:', error);
+            }
+            return 'Unbekannter Ort';
+        }
+		
+				
+		// Öffnet das JSON-Hilfemodal beim Klick auf das Label
+		document.getElementById('jsonUploadBtn').addEventListener('click', function(e) {
+			if (e.target.tagName.toLowerCase() === 'label') {
+				e.preventDefault();
+				document.getElementById('jsonHelpModal').style.display = 'flex';
+			}
+		});
+
+		// Öffnet den File-Dialog beim Klick auf den neuen Button im Modal
+		document.getElementById('jsonStartUploadBtn').addEventListener('click', function() {
+			document.getElementById('jsonHelpModal').style.display = 'none';
+			document.getElementById('jsonFile').click();
+		});
+
+
+        // Initialize on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('🚴‍♂️ GPS Tracker mit Bahnfahrt-Erkennung geladen');
+            calculateWeeks();
+            initializeChart();
+            updateDataTable();
+            updateStatistics();
+            updateStadtradelnPeriod();
+			loadOptions();
+        });
+
+
+	// Gruppenbildung & Tageszusammenfassung
+	function getBikeTripsSummarizedByDay(trips) {
+	  const result = {};
+	  trips.forEach(trip => {
+		const dateKey = trip.startTime.toLocaleDateString('de-DE');
+		if (!result[dateKey]) result[dateKey] = 0;
+		result[dateKey] += trip.distance / 1000;
+	  });
+	  return Object.entries(result).map(([date, km]) => ({
+		date,
+		km: km.toFixed(1)
+	  }));
+	}
+
+	// Neue Tageskarten
+	function createDailyTripCard(entry, index) {
+	  const card = document.createElement('div');
+	  card.className = 'trip-input-card';
+	  card.innerHTML = `
+		<div class="trip-input-header">
+		  <div class="trip-number">Tag ${index + 1}</div>
+		  <div class="trip-mode-badge trip-mode-bike">🚴‍♂️ Tageswert</div>
+		</div>
+		<div class="input-fields-grid">
+		  <div class="input-field">
+			<label class="input-label">Datum*</label>
+			<input class="input-value" value="${entry.date}" readonly onclick="copyToClipboard('${entry.date}', this)" />
+		  </div>
+		  <div class="input-field">
+			<label class="input-label">Kilometer*</label>
+			<input class="input-value" value="${entry.km}" readonly onclick="copyToClipboard('${entry.km}', this)" />
+		  </div>
+		  <div class="input-field">
+			<label class="input-label">Anzahl Fahrten*</label>
+			<input class="input-value" value="1" readonly onclick="copyToClipboard('1', this)" />
+		  </div>
+		</div>
+	  `;
+	  return card;
+	}
+
+	// Umschaltbare Ansicht für Stadtradeln-Input (Tages/Einzel)
+	function setupStadtradelnInputHelper() {
+	  bikeTrips = filteredTrips.filter(trip => trip.mode === 'biking');
+	  const container = document.getElementById('tripInputCards');
+	  const checkbox = document.getElementById('toggleDailySummary');
+	  const useDailyMode = checkbox ? checkbox.checked : false;
+	  container.innerHTML = '';
+
+	  if (useDailyMode) {
+		const dailySummary = getBikeTripsSummarizedByDay(bikeTrips);
+		dailySummary.forEach((entry, index) => {
+		  container.appendChild(createDailyTripCard(entry, index));
+		});
+		// Navigation ausblenden
+		document.getElementById('prevTripBtn').style.display = 'none';
+		document.getElementById('nextTripBtn').style.display = 'none';
+		document.getElementById('tripCounter').style.display = 'none';
+	  } else {
+		bikeTrips.forEach((trip, index) => {
+		  container.appendChild(createTripInputCard(trip, index));
+		});
+		currentTripIndex = 0;
+		updateTripNavigation();
+		showCurrentTrip();
+		// Navigation anzeigen
+		document.getElementById('prevTripBtn').style.display = 'inline-block';
+		document.getElementById('nextTripBtn').style.display = 'inline-block';
+		document.getElementById('tripCounter').style.display = 'block';
+	  }
+	  document.getElementById('stadtradelnInputHelper').style.display = bikeTrips.length > 0 ? 'block' : 'none';
+	}
+
+	// Toggle-Checkbox initialisieren und speichern
+	document.addEventListener('DOMContentLoaded', function() {
+	  const checkbox = document.getElementById('toggleDailySummary');
+	  if (!checkbox) return;
+	  checkbox.checked = localStorage.getItem('toggleDailySummary') !== 'false';
+	  checkbox.addEventListener('change', function() {
+		localStorage.setItem('toggleDailySummary', this.checked);
+		setupStadtradelnInputHelper();
+	  });
+	});
+
+    </script>
+	
+<script>
+// ===== V27.2 PERSISTENCE: localStorage für Stadtradeln-Zeitraum, Optionen =====
+const STORAGE_KEY = 'gpxtracker_settings_v2';
+
+function saveSettingsToStorage() {
+  const settings = {
+    stadtradelnStart: document.getElementById('stadtradelnStart')?.value || '',
+    stadtradelnEnd:   document.getElementById('stadtradelnEnd')?.value   || '',
+    nachtragEnd:      document.getElementById('nachtragEnd')?.value      || '',
+    minDistance:      document.getElementById('minDistanceKm')?.value    || '2',
+    // Optionen
+    optMaxSpeed:              document.getElementById('optMaxSpeed')?.value || '',
+    optMaxAcceleration:       document.getElementById('optMaxAcceleration')?.value || '',
+    optMaxJumpDistance:       document.getElementById('optMaxJumpDistance')?.value || '',
+    optMinAccuracy:           document.getElementById('optMinAccuracy')?.value || '',
+    optMaxTimeDelta:          document.getElementById('optMaxTimeDelta')?.value || '',
+    optSpeedConsistencyFactor:document.getElementById('optSpeedConsistencyFactor')?.value || '',
+    optMedianFilterWindow:    document.getElementById('optMedianFilterWindow')?.value || '',
+    optWalkMin:  document.getElementById('optWalkMin')?.value || '',
+    optWalkMax:  document.getElementById('optWalkMax')?.value || '',
+    optBikeMin:  document.getElementById('optBikeMin')?.value || '',
+    optBikeMax:  document.getElementById('optBikeMax')?.value || '',
+    optVehicleMin: document.getElementById('optVehicleMin')?.value || '',
+    optVehicleMax: document.getElementById('optVehicleMax')?.value || '',
+    optTrainMin:   document.getElementById('optTrainMin')?.value || '',
+    optTrainMax:   document.getElementById('optTrainMax')?.value || '',
+    optMinTripDistance: document.getElementById('optMinTripDistance')?.value || '',
+    optMinTripDuration: document.getElementById('optMinTripDuration')?.value || '',
+    optMaxPauseDuration:document.getElementById('optMaxPauseDuration')?.value || '',
+  };
+  try { localStorage.setItem(STORAGE_KEY, JSON.stringify(settings)); } catch(e) {}
+}
+
+function loadSettingsFromStorage() {
+  let settings;
+  try { settings = JSON.parse(localStorage.getItem(STORAGE_KEY) || 'null'); } catch(e) { settings = null; }
+  if (!settings) return;
+  const set = (id, val) => { const el = document.getElementById(id); if (el && val !== '') el.value = val; };
+  set('stadtradelnStart', settings.stadtradelnStart);
+  set('stadtradelnEnd',   settings.stadtradelnEnd);
+  set('nachtragEnd',      settings.nachtragEnd);
+  set('minDistanceKm',    settings.minDistance);
+  set('optMaxSpeed',              settings.optMaxSpeed);
+  set('optMaxAcceleration',       settings.optMaxAcceleration);
+  set('optMaxJumpDistance',       settings.optMaxJumpDistance);
+  set('optMinAccuracy',           settings.optMinAccuracy);
+  set('optMaxTimeDelta',          settings.optMaxTimeDelta);
+  set('optSpeedConsistencyFactor',settings.optSpeedConsistencyFactor);
+  set('optMedianFilterWindow',    settings.optMedianFilterWindow);
+  set('optWalkMin', settings.optWalkMin); set('optWalkMax', settings.optWalkMax);
+  set('optBikeMin', settings.optBikeMin); set('optBikeMax', settings.optBikeMax);
+  set('optVehicleMin', settings.optVehicleMin); set('optVehicleMax', settings.optVehicleMax);
+  set('optTrainMin',   settings.optTrainMin);   set('optTrainMax',   settings.optTrainMax);
+  set('optMinTripDistance', settings.optMinTripDistance);
+  set('optMinTripDuration', settings.optMinTripDuration);
+  set('optMaxPauseDuration',settings.optMaxPauseDuration);
+  // Werte sofort anwenden
+  if (typeof updateStadtradelnPeriod === 'function') updateStadtradelnPeriod();
+}
+
+function resetSettingsToDefault() {
+  if (!confirm('Alle gespeicherten Einstellungen zurücksetzen?')) return;
+  try { localStorage.removeItem(STORAGE_KEY); } catch(e) {}
+  // Stadtradeln-Defaults
+  const y = new Date().getFullYear();
+  const set = (id, val) => { const el = document.getElementById(id); if (el) el.value = val; };
+  set('stadtradelnStart', y + '-06-29');
+  set('stadtradelnEnd',   y + '-07-19');
+  set('nachtragEnd',      y + '-07-26');
+  set('minDistanceKm',    '2');
+  if (typeof updateStadtradelnPeriod === 'function') updateStadtradelnPeriod();
+  if (typeof resetOptionsToDefault === 'function') resetOptionsToDefault();
+  alert('Einstellungen zurückgesetzt.');
+}
+
+// Auto-save: bei jeder Änderung an Datum-Feldern
+['stadtradelnStart','stadtradelnEnd','nachtragEnd','minDistanceKm'].forEach(id => {
+  const el = document.getElementById(id);
+  if (el) el.addEventListener('change', saveSettingsToStorage);
+});
+
+// Beim Speichern der Optionen auch Settings speichern
+const _origSaveOptions = typeof saveOptions === 'function' ? saveOptions : null;
+if (_origSaveOptions) {
+  // Wir wrappen saveOptions um Storage-Call zu ergänzen
+  window._origSaveOptions = _origSaveOptions;
+}
+
+// Storage laden beim Start
+document.addEventListener('DOMContentLoaded', function() {
+  loadSettingsFromStorage();
+});
+// Falls DOM schon geladen:
+if (document.readyState !== 'loading') {
+  loadSettingsFromStorage();
+}
+// ===== ENDE PERSISTENCE =====
+</script>
 </body>
 </html>
+
